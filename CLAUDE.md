@@ -51,8 +51,25 @@ here, it does not lower the technical bar.
 
 ## deployment
 
-- Hosting is GitHub Pages. Publishing happens by pushing to the default branch.
-- Never force push the branch that GitHub Pages serves from.
+- Live at https://v0l0dka.github.io
+- Repo `V0l0dka/V0l0dka.github.io`, public, default branch `main`.
+- GitHub Pages is set to "deploy from branch": `main`, folder `/` (root).
+  There is no build step and no Actions workflow. Whatever HTML sits in the
+  repo is what the browser gets.
+- `git push` is the deploy. It goes live in roughly 30-60 seconds.
+- Never force push `main`. It is the branch Pages serves from.
 - After a deploy, verify the live URL actually serves the change. GitHub Pages
   caches aggressively, so a stale page is not proof of failure - check with a
   hard reload before concluding anything.
+- `.nojekyll` is intentional. Without it GitHub runs the site through Jekyll,
+  which silently ignores any file or folder starting with `_`. Do not delete it.
+- Because this is a root-level site, absolute paths like `/style.css` work.
+  Prefer them over `../../style.css`.
+
+## site structure
+
+- `index.html` - the home page
+- `404.html` - served by GitHub Pages for any unknown URL
+- `style.css` - all styling, single file for now
+- Split into more files only when one file genuinely becomes hard to navigate,
+  not on principle.

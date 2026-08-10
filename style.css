@@ -1,0 +1,44 @@
+/* Light palette is the base. Dark only overrides the colors. */
+:root {
+  --bg: #fbfbf9;
+  --fg: #1a1a18;
+  --muted: #6b6b66;
+  --accent: #3b5bdb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a;
+    --fg: #e8e8e4;
+    --muted: #9a9a94;
+    --accent: #8ba3ff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2rem 1.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+}
+
+p { margin: 0 0 1rem; color: var(--muted); }
+
+a { color: var(--accent); }
+
+img { max-width: 100%; height: auto; }
