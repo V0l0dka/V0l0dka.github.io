@@ -1,0 +1,159 @@
+/* ============================================================
+   GAMES + CONFIGURATOR
+
+   The games interrupt the editorial flow, they do not replace it.
+   Each one is a framed stage inside the page, not a full takeover.
+   Acid green is allowed to dominate HERE and only here.
+   ============================================================ */
+
+.games__lead {
+  display: grid;
+  gap: 1rem;
+  min-height: 60vh;
+  align-content: center;
+  margin-bottom: var(--stack);
+}
+
+.lead-line {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 6vw, 4rem);
+  line-height: 1;
+  margin: 0;
+}
+
+.game { margin-bottom: var(--stack); }
+
+.game__stage {
+  position: relative;
+  margin-top: 2rem;
+  aspect-ratio: 16 / 9;
+  border: 1px solid #1e1e1e;
+  background:
+    linear-gradient(180deg, rgba(215,255,0,.03), transparent 40%),
+    #0a0a0a;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* Each mission tints its own stage. */
+.game--deep .game__stage {
+  background: linear-gradient(180deg, var(--deep) 0%, #04101f 100%);
+}
+
+.game__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- HUD -------------------------------------------- */
+
+.game__hud {
+  position: absolute;
+  top: 1rem; left: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  font-family: var(--mono);
+  pointer-events: none;
+}
+
+.hud__label {
+  font-size: .68rem;
+  letter-spacing: .28em;
+  color: var(--grey);
+}
+
+.hud__value {
+  font-size: clamp(1.1rem, 3vw, 1.8rem);
+  letter-spacing: .1em;
+  color: var(--acid);
+  font-variant-numeric: tabular-nums;
+}
+
+.game__placeholder {
+  font-family: var(--mono);
+  font-size: .78rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #3a3a3a;
+  border: 1px dashed #242424;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* Result banners, used from Phase 2 onward. */
+.game__result {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1rem 1.25rem;
+  font-family: var(--mono);
+  font-size: .8rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.game__result--win  { color: var(--black); background: var(--acid); }
+.game__result--lose { color: var(--off-white); background: #1a1a1a; }
+
+/* ---------- 07 configurator -------------------------------- */
+
+.config {
+  display: grid;
+  grid-template-columns: 1fr 18rem;
+  gap: var(--gutter);
+  align-items: center;
+}
+
+.config__stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 1px solid #1e1e1e;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(60% 60% at 50% 60%, #141414, #070707);
+}
+
+/* Layers stack in z-order: frame, then wheels, light, seat, and so on. */
+.config__layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+.config__placeholder {
+  font-family: var(--mono);
+  font-size: .75rem;
+  letter-spacing: .22em;
+  color: #3a3a3a;
+  border: 1px dashed #242424;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.config__ui { display: grid; gap: 1.75rem; align-content: start; }
+
+.config__group { display: grid; gap: .6rem; }
+
+.config__name {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .26em;
+  color: var(--grey);
+}
+
+.config__options { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+.config__opt {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .12em;
+  padding: .5rem .85rem;
+  border: 1px solid #242424;
+  background: transparent;
+  color: var(--grey);
+  cursor: pointer;
+  transition: color 200ms var(--ease), border-color 200ms var(--ease);
+}
+
+.config__opt:hover { color: var(--off-white); border-color: var(--grey); }
+
+.config__opt[aria-pressed="true"] {
+  color: var(--acid);
+  border-color: var(--acid);
+}

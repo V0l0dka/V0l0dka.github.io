@@ -1,0 +1,127 @@
+/* ============================================================
+   RESPONSIVE
+
+   Mobile is not the desktop layout made smaller. The 12-column
+   asymmetry that works on a wide screen turns into unreadable
+   slivers on a phone, so on small screens the grid collapses and
+   the offsets are rebuilt at a scale that still reads as
+   art-directed rather than as a stack of blocks.
+
+   Rules that hold at every width:
+     - nothing overflows horizontally
+     - no tap target below 44px
+     - pinned sections never trap the scroll
+   ============================================================ */
+
+/* ---------- tablet ----------------------------------------- */
+
+@media (max-width: 1024px) {
+  .config { grid-template-columns: 1fr; }
+  .config__ui { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- phone ------------------------------------------ */
+
+@media (max-width: 720px) {
+
+  :root {
+    --stack: clamp(3rem, 10vh, 6rem);
+  }
+
+  /* Display type has to come down hard or a single word overruns
+     the viewport and forces a sideways scroll. РОЖДЕНИЯ, is the
+     word that sets the ceiling. */
+  .display--xl { font-size: clamp(2.2rem, 11vw, 4rem); }
+  .display--l  { font-size: clamp(1.9rem, 9.5vw, 3.2rem); }
+  .display--m  { font-size: clamp(1.3rem, 6.5vw, 2rem); }
+
+  /* --- intro --- */
+  .meter {
+    /* Three columns become two rows: label + number on top, bar
+       underneath at full width. A 8.5rem label column leaves the
+       bar about 40px wide on a phone, which reads as broken. */
+    grid-template-columns: 1fr auto;
+    gap: .5rem 1rem;
+  }
+  .meter__track { grid-column: 1 / -1; }
+
+  /* --- archive --- */
+  .year { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
+
+  .year__num,
+  .year:nth-child(even) .year__num {
+    grid-column: 1 / -1;
+    text-align: left;
+    font-size: clamp(3.5rem, 22vw, 7rem);
+  }
+
+  .year__caption,
+  .year:nth-child(even) .year__caption {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+  }
+
+  /* Keep a deliberate stagger, just a shallower one - full-width
+     images alternating with inset ones, rather than a plain column. */
+  .year__media { grid-template-columns: repeat(6, 1fr) !important; gap: 1.5rem; }
+  .year__media .shot { grid-column: 1 / -1 !important; margin-top: 0 !important; }
+  .year__media .shot:nth-child(even) { grid-column: 2 / -1 !important; }
+  .year__media .shot:nth-child(3n)   { grid-column: 1 / span 5 !important; }
+
+  .year--empty { min-height: 70vh; }
+  .void { margin-top: 18vh; gap: 1.75rem; }
+
+  .reveal { min-height: 100vh; }
+  .reveal__figure { width: 88vw; }
+
+  /* --- activities --- */
+  .activity { min-height: 70vh; }
+  .activity:nth-child(odd)  .activity__label,
+  .activity:nth-child(even) .activity__label {
+    justify-self: start;
+    margin: 0 var(--gutter);
+    font-size: clamp(2rem, 14vw, 4rem);
+  }
+
+  /* --- statistics --- */
+  .stat__value { font-size: clamp(3.5rem, 24vw, 7rem); }
+  .stat__detail { font-size: .78rem; }
+
+  /* --- games ---
+     16:9 on a phone is a 200px-tall letterbox: too small to play in.
+     A portrait stage gives the games room and matches how the phone
+     is actually held. */
+  .game__stage { aspect-ratio: 3 / 4; }
+
+  /* --- configurator --- */
+  .config__ui { grid-template-columns: 1fr; }
+  .config__stage { aspect-ratio: 1; }
+
+  /* --- controls ---
+     Every interactive element clears 44px in both directions. */
+  .btn { padding: 1rem 1.75rem; min-height: 44px; }
+  .config__opt { min-height: 44px; padding: .75rem 1rem; }
+  .void__retry { min-height: 44px; }
+  .audio-toggle { width: 44px; height: 44px; }
+
+  /* The escaping НЕТ button must stay inside the viewport on touch,
+     and must never sit under the thumb bar. */
+  [data-answer-no].is-loose { max-width: 40vw; }
+}
+
+/* ---------- very short screens ------------------------------ */
+
+@media (max-height: 560px) {
+  .chapter--intro, .chapter--question { min-height: 120vh; }
+  .reveal { min-height: 120vh; }
+}
+
+/* ---------- pointer capability ------------------------------
+   Hover effects only where hovering exists. On touch these
+   otherwise stick in their hover state after a tap. */
+
+@media (hover: none) {
+  .stat:hover .stat__value { color: inherit; }
+  .btn--acid:hover { background: transparent; color: var(--acid); }
+  .config__opt:hover { color: var(--grey); border-color: #242424; }
+}

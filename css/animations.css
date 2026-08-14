@@ -1,0 +1,94 @@
+/* ============================================================
+   ANIMATIONS - keyframes and the classes GSAP/JS toggle.
+
+   Scroll-driven motion lives in js/scroll.js. What is here is the
+   self-contained stuff: blinking cursors, flicker, the states an
+   element sits in before GSAP picks it up.
+   ============================================================ */
+
+/* NOTE: elements marked [data-reveal-on-scroll] are deliberately NOT
+   hidden here. GSAP's from() sets their start state the moment the
+   trigger is built, so hiding them in CSS as well would mean a blank
+   page any time the module fails to load - a stylesheet cannot know
+   whether the JavaScript arrived. Fail visible, not invisible. */
+
+/* ---------- intro ------------------------------------------ */
+
+@keyframes dots {
+  0%, 20%  { opacity: 0; }
+  40%      { opacity: 1; }
+  100%     { opacity: 1; }
+}
+
+[data-dots-anim] { animation: dots 1.4s steps(3, end) infinite; }
+
+@keyframes error-in {
+  0%   { opacity: 0; transform: translateY(8px); letter-spacing: .5em; }
+  100% { opacity: 1; transform: none; letter-spacing: .2em; }
+}
+
+.intro__error:not([hidden]) { animation: error-in 520ms var(--ease) both; }
+
+@keyframes greet-in {
+  0%   { opacity: 0; transform: translateY(40px) scale(.98); }
+  100% { opacity: 1; transform: none; }
+}
+
+.intro__stage--greet:not([hidden]) { animation: greet-in 900ms var(--ease) both; }
+
+/* ---------- 2025 fake search -------------------------------- */
+
+@keyframes pulse-dim {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: 1; }
+}
+
+.void__percent { animation: pulse-dim 1.8s ease-in-out infinite; }
+
+/* ---------- gift ------------------------------------------- */
+
+@keyframes gift-spin { to { transform: rotate(360deg); } }
+@keyframes gift-pop {
+  0%   { transform: scale(.6); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.gift__art { animation: gift-spin 24s linear infinite; }
+.gift__stat:not([hidden]),
+.gift__word:not([hidden]) { animation: gift-pop 520ms var(--ease) both; }
+
+/* ---------- generic ---------------------------------------- */
+
+@keyframes fade-up {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: none; }
+}
+
+.is-in { animation: fade-up 700ms var(--ease) both; }
+
+/* ============================================================
+   REDUCED MOTION
+
+   The site must remain a normal scrolling page. Everything still
+   appears - it simply stops moving. js/scroll.js reads the same
+   media query and skips scrub/pin entirely.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+
+  /* Anything that was waiting to be animated in is simply shown. */
+  [data-reveal-on-scroll] { opacity: 1 !important; transform: none !important; }
+
+  .gift__art { animation: none; }
+}
+
+/* If the module never boots, show everything rather than a blank page. */
+.no-js [data-reveal-on-scroll] { opacity: 1; transform: none; }

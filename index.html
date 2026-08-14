@@ -1,18 +1,279 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>V0l0dka</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Личный цифровой архив. С днём рождения, Мира.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>МИРА / 2015—2026</title>
+
+  <link rel="preconnect" href="/">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/games.css">
+  <link rel="stylesheet" href="/css/responsive.css">
 </head>
-<body>
-  <main>
-    <h1>V0l0dka</h1>
-    <p>This site is live.</p>
-    <ul>
-      <li><a href="/congrats/">A celebration</a></li>
-    </ul>
-  </main>
+
+<body class="is-locked">
+
+<!-- ============================================================
+     CHAPTER 01 - INTRO
+     Black screen, fake load, ERROR, then the greeting.
+     ============================================================ -->
+<section class="chapter chapter--intro" id="intro" aria-label="Интро">
+  <div class="intro" data-intro>
+
+    <div class="intro__stage" data-intro-load>
+      <p class="intro__status" data-load-title>ЗАГРУЖАЕМ МИРУ<span data-dots-anim>...</span></p>
+
+      <ul class="meters" data-meters>
+        <li class="meter" data-meter data-target="100">
+          <span class="meter__name">характер</span>
+          <span class="meter__track"><i class="meter__fill" style="--w:100%"></i></span>
+          <span class="meter__val" data-meter-val>0%</span>
+        </li>
+        <li class="meter" data-meter data-target="127">
+          <span class="meter__name">безумие</span>
+          <span class="meter__track"><i class="meter__fill" style="--w:100%"></i></span>
+          <span class="meter__val" data-meter-val>0%</span>
+        </li>
+        <!-- 146% deliberately overruns its own bar. The bar stops at
+             the track edge; only the number keeps climbing. -->
+        <li class="meter meter--overflow" data-meter data-target="146">
+          <span class="meter__name">ебнутость</span>
+          <span class="meter__track"><i class="meter__fill" style="--w:100%"></i></span>
+          <span class="meter__val" data-meter-val>0%</span>
+        </li>
+      </ul>
+
+      <p class="intro__error" data-load-error hidden>ERROR: TOO MUCH</p>
+    </div>
+
+    <div class="intro__stage intro__stage--greet" data-intro-greet hidden>
+      <h1 class="display display--xl">С ДНЁМ<br>РОЖДЕНИЯ,<br><em>МИРА</em></h1>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 02 - THE QUESTION
+     The НЕТ button runs away. After enough attempts it gives up.
+     ============================================================ -->
+<section class="chapter chapter--question" id="question" aria-label="Поехали?">
+  <div class="question" data-question>
+    <h2 class="display display--l">ПОЕХАЛИ?</h2>
+
+    <p class="question__taunt" data-taunt aria-live="polite"></p>
+
+    <div class="question__actions" data-question-actions>
+      <button class="btn btn--acid" data-answer-yes>ДА</button>
+      <button class="btn btn--ghost" data-answer-no>НЕТ</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 03 - THE ARCHIVE
+     Rows are generated from ARCHIVE in js/assets.js.
+     ============================================================ -->
+<section class="chapter chapter--archive" id="archive" aria-label="Архив Миры">
+  <header class="archive__intro">
+    <p class="kicker">ГЛАВА 03</p>
+    <h2 class="display display--l">АРХИВ</h2>
+    <p class="caption">2015 — 2026</p>
+  </header>
+
+  <div class="archive" data-archive></div>
+
+  <!-- 2026 reveal. Pinned, slow, deliberately after the void. -->
+  <div class="reveal" data-reveal-2026>
+    <figure class="reveal__figure">
+      <picture>
+        <source data-reveal-webp type="image/webp">
+        <img data-reveal-img alt="Мира, 2026" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+    <div class="reveal__type">
+      <p class="display display--xl">2026</p>
+      <p class="reveal__word" data-reveal-word>вернулась.</p>
+    </div>
+  </div>
+
+  <!-- Archive outro -->
+  <div class="archive__outro" data-outro>
+    <p class="outro__line" data-outro-line>И да.</p>
+    <p class="outro__line" data-outro-line>Похер, что хронология не сходится.</p>
+    <p class="outro__line" data-outro-line>Ты знаешь, у меня с этим проблемы.</p>
+    <a class="btn btn--acid btn--inline" href="#activities" data-continue>ПРОДОЛЖИТЬ →</a>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 04 - ACTIVITIES
+     Full-bleed cinematic panels, generated from ACTIVITIES.
+     ============================================================ -->
+<section class="chapter chapter--activities" id="activities" aria-label="MIRA IRL">
+  <header class="activities__intro">
+    <p class="kicker">ГЛАВА 04</p>
+    <h2 class="display display--l">MIRA IRL</h2>
+  </header>
+  <div class="activities" data-activities></div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 05 - STATISTICS
+     Museum wall. Each figure opens in place.
+     ============================================================ -->
+<section class="chapter chapter--stats" id="stats" aria-label="Статистика">
+  <header class="stats__intro">
+    <p class="kicker">ГЛАВА 05</p>
+    <h2 class="display display--l">ЦИФРЫ</h2>
+  </header>
+  <div class="stats" data-stats></div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 06 - MINI GAMES
+     Phase 1: framed placeholders that announce themselves and
+     can be dismissed. Real games land in Phase 2.
+     ============================================================ -->
+<section class="chapter chapter--games" id="games" aria-label="Мини-игры">
+  <div class="games__lead">
+    <p class="lead-line" data-lead-line>ДОСТАТОЧНО СТАТИСТИКИ.</p>
+    <p class="lead-line" data-lead-line>ПРОВЕРИМ НА ПРАКТИКЕ.</p>
+  </div>
+
+  <article class="game" id="game-coal" data-game="coal">
+    <p class="kicker">MISSION 01</p>
+    <h3 class="display display--m">CATCH THE COAL</h3>
+    <div class="game__stage" data-game-stage="coal">
+      <div class="game__hud">
+        <span class="hud__label">COALS</span>
+        <span class="hud__value" data-hud="coal">00 / 10</span>
+      </div>
+      <p class="game__placeholder">игра появится в следующей версии</p>
+    </div>
+  </article>
+
+  <article class="game" id="game-surron" data-game="surron">
+    <p class="kicker">MISSION 02</p>
+    <h3 class="display display--m">DON'T CRASH</h3>
+    <div class="game__stage" data-game-stage="surron">
+      <div class="game__hud">
+        <span class="hud__label">SPEED</span>
+        <span class="hud__value" data-hud="surron">000 KM/H</span>
+      </div>
+      <p class="game__placeholder">игра появится в следующей версии</p>
+    </div>
+  </article>
+
+  <article class="game game--deep" id="game-diving" data-game="diving">
+    <p class="kicker">MISSION 03</p>
+    <h3 class="display display--m">GO DEEPER</h3>
+    <div class="game__stage" data-game-stage="diving">
+      <div class="game__hud">
+        <span class="hud__label">RECOVERED</span>
+        <span class="hud__value" data-hud="diving">0 / 3</span>
+      </div>
+      <p class="game__placeholder">игра появится в следующей версии</p>
+    </div>
+  </article>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 07 - SUR-RON CUSTOMIZATION
+     Phase 1: the configurator shell, real layers land in Phase 2.
+     ============================================================ -->
+<section class="chapter chapter--config" id="config" aria-label="Кастомизация Sur-Ron">
+  <header class="config__intro">
+    <p class="kicker">ГЛАВА 07</p>
+    <h2 class="display display--l">LIGHT BEE X</h2>
+  </header>
+
+  <div class="config">
+    <div class="config__stage" data-config-stage>
+      <p class="config__placeholder">SUR-RON LIGHT BEE X — BLACK</p>
+    </div>
+    <div class="config__ui" data-config-ui></div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 08 - TMNT GIFT
+     Short, loud, then gone.
+     ============================================================ -->
+<section class="chapter chapter--gift" id="gift" aria-label="Подарок">
+  <div class="gift" data-gift>
+    <p class="gift__tag">LEGENDARY ITEM</p>
+    <div class="gift__art" data-gift-art aria-hidden="true"></div>
+    <button class="btn btn--acid" data-gift-equip>EQUIP</button>
+    <p class="gift__stat" data-gift-stat hidden>+100 ARMOR</p>
+    <p class="gift__word" data-gift-word hidden>ПОДАРОК</p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 09 - FUTURE
+     ============================================================ -->
+<section class="chapter chapter--future" id="future" aria-label="Что дальше">
+  <h2 class="display display--l">А ЧТО ДАЛЬШЕ?</h2>
+  <ul class="future" data-future>
+    <li class="future__item">MORE SPEED</li>
+    <li class="future__item">MORE TRAVEL</li>
+    <li class="future__item">MORE WATER</li>
+    <li class="future__item">MORE SNOW</li>
+    <li class="future__item">MORE STORIES</li>
+  </ul>
+  <p class="future__q">?</p>
+  <p class="future__line">этого пока никто не знает</p>
+  <p class="future__line">но что-то мне подсказывает, что будет весело</p>
+</section>
+
+
+<!-- ============================================================
+     CHAPTER 10 - FINAL
+     Quietest part. No acid green, no HUD, no footer.
+     ============================================================ -->
+<section class="chapter chapter--final" id="final" aria-label="Финал">
+  <figure class="final__figure">
+    <picture>
+      <source data-final-webp type="image/webp">
+      <img data-final-img alt="Мира" loading="lazy" decoding="async">
+    </picture>
+  </figure>
+
+  <div class="final__text">
+    <!-- The personal message goes here. Left empty on purpose. -->
+    <p class="final__message" data-final-message></p>
+    <p class="display display--m final__greet">С ДНЁМ РОЖДЕНИЯ, МИРА ❤️</p>
+    <p class="final__after">Дальше — интереснее.</p>
+  </div>
+</section>
+
+
+<!-- Persistent UI ------------------------------------------------ -->
+<button class="audio-toggle" data-audio-toggle aria-pressed="false" aria-label="Звук">
+  <span data-audio-icon>♪</span>
+</button>
+
+<div class="scroll-progress" role="presentation"><i data-scroll-fill></i></div>
+
+<p class="sr-only" aria-live="polite" data-live></p>
+
+<!-- GSAP is vendored, not hotlinked: no CDN outage can take the
+     site down and there is no build step. -->
+<script src="/js/vendor/gsap.min.js"></script>
+<script src="/js/vendor/ScrollTrigger.min.js"></script>
+<script type="module" src="/js/main.js"></script>
 </body>
 </html>

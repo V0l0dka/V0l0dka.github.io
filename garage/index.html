@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>Garage</title>
+  <link rel="stylesheet" href="/garage/garage.css">
+</head>
+
+<!--
+  ============================================================
+  VARIANT A - LOOPING VIDEO BACKDROP
+
+  Expects three files in /garage/media/ :
+    loop.mp4          the clip, H.264
+    loop.webm         the same clip, VP9 (smaller, optional)
+    loop-poster.jpg   first frame, shown while the video loads
+
+  See media/README.md for the exact ffmpeg commands.
+
+  muted + playsinline are what make autoplay legal. Remove either
+  one and the browser blocks it - there is no way around that.
+  ============================================================
+-->
+
+<body>
+  <div class="backdrop" data-backdrop
+       data-missing="no video yet&#10;&#10;drop loop.mp4 and loop-poster.jpg into /garage/media/">
+    <div class="backdrop__parallax" data-parallax>
+      <video class="backdrop__media"
+             autoplay muted loop playsinline preload="metadata"
+             poster="/garage/media/loop-poster.jpg"
+             aria-hidden="true">
+        <source src="/garage/media/loop.webm" type="video/webm">
+        <source src="/garage/media/loop.mp4"  type="video/mp4">
+      </video>
+    </div>
+  </div>
+
+  <canvas class="grain" data-grain aria-hidden="true"></canvas>
+
+  <nav class="switch" aria-label="Backdrop variant">
+    <a href="/garage/" aria-current="page">Video</a>
+    <a href="/garage/still.html">Still</a>
+  </nav>
+
+  <main class="content">
+    <p class="eyebrow">Placeholder copy</p>
+    <h1 class="title">Put the headline here</h1>
+    <p class="lede">
+      And the sentence under it here. This block is deliberately plain -
+      it is only present so the backdrop can be judged with text over it,
+      which is the situation that actually matters.
+    </p>
+  </main>
+
+  <script src="/garage/backdrop.js"></script>
+</body>
+</html>
