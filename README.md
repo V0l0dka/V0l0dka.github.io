@@ -119,23 +119,47 @@ Roughly 30–60 seconds to go live.
 
 ---
 
-## phase 1 is done. phase 2 is not.
+## the games
 
-Working now: the full scroll, intro sequence, the escaping НЕТ button, the
-archive with real photographs, the empty years, the 2026 reveal, activities,
-statistics with counters and click-to-expand, the configurator UI, the gift,
-the future list, the final chapter, mobile, reduced-motion.
+Three canvas games, all inside the one page - no separate routes. They share
+`js/games/engine.js` (canvas sizing, frame loop, pointer input, auto-pause) and
+each exports the same `init(stage, hud)`.
 
-**Deliberately not built yet:**
+| mission | goal | win | lose |
+| ------- | ---- | --- | ---- |
+| 01 CATCH THE COAL | catch 10, speed climbs | `PROFESSIONAL` | 3 missed → `УГОЛЬ ПОБЕДИЛ` |
+| 02 DON'T CRASH | survive 40 s | `ну нормально` | `зато красиво` |
+| 03 GO DEEPER | torch out 3 objects | `ALL ITEMS RECOVERED` | — |
 
-- The three mini games are stubs. Each has a working HUD and a fixed contract
-  (`init(stage, hud) -> {start, stop, destroy}`), so Phase 2 fills in bodies
-  without touching anything else.
-- The Sur-Ron configurator has a working interface and state machine but no
-  artwork. Each variant needs a transparent PNG; fill in `layer:` in
+Rules they all obey:
+
+- **They never steal the scroll.** A game only captures input while a run is
+  actually in progress. SPACE scrolls the page normally everywhere else, and a
+  finger dragged across an idle canvas still scrolls.
+- **They stop when you look away.** Off-screen or background tab pauses the
+  loop, so three canvases are never animating down a 38 000 px page.
+- **Pressing start centres the stage**, because the catcher lives at the bottom
+  of it and used to sit below the fold.
+
+Sound is synthesised in `js/audio.js` with WebAudio - there are no audio files.
+Off by default, wired to the existing toggle.
+
+## phase 2 is done. what is left.
+
+Everything in the brief is built except the pieces below.
+
+- **The Sur-Ron configurator still has no artwork.** The interface and state
+  machine work; each variant needs a transparent PNG. Fill in `layer:` in
   `js/customization.js` and the stacking already works.
-- The TMNT chapter is a placeholder pattern, not the real comic art.
-- No sound files exist yet. The mute control is wired and the site is fully
-  understandable without audio.
+- **Several external-media slots are empty** - `archive-2022`, `game-win`,
+  `game-lose`, `tmnt-hero`, `tmnt-armor`. See `assets/external/README.md`. An
+  empty slot renders nothing, so the page is complete without them.
+- **The TMNT chapter is original art, not TMNT art.** The brief asked for
+  Turtles imagery and reaction GIFs from GIPHY/Tenor. Those belong to other
+  people and this site is public, so re-hosting them here would be
+  redistribution - and it stays in git history permanently. The chapter is
+  built as a drawn comic panel instead: CSS halftone, speed lines, inline SVG
+  shell. If you hold rights to specific artwork, drop it in `assets/external/tmnt/`
+  and point the slots at it.
 - **The final personal message is empty.** It is in `index.html`, marked
   `data-final-message`. That one is for you to write.

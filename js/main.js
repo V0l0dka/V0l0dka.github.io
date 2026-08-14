@@ -10,6 +10,7 @@ import { $, applySize } from './dom.js';
 import { FINAL_PHOTO, PRELOAD } from './assets.js';
 
 import { initIntro, initQuestion, initGift, initFuture, initAudio } from './interactions.js';
+import { initAudioEngine } from './audio.js';
 import { buildArchive } from './archive.js';
 import { buildActivities } from './activities.js';
 import { buildStats } from './statistics.js';
@@ -30,6 +31,7 @@ function build() {
   mountFinalPhoto();
   mountGames();
 
+  initAudioEngine();   // must precede initAudio: it listens for the toggle
   initQuestion();
   initGift();
   initFuture();
@@ -78,6 +80,16 @@ function mountGames() {
       console.error(`game "${game.id}" failed to mount`, err);
     }
   }
+
+  // Recovering all three items lifts the diving stage out of the
+  // deep blue and back into the editorial palette. The games know
+  // nothing about the page; they announce, the page reacts.
+  document.addEventListener('game:end', (e) => {
+    const { game, won } = e.detail || {};
+    if (game === 'diving' && won) {
+      document.getElementById('game-diving')?.classList.add('is-surfaced');
+    }
+  });
 }
 
 /* ---------- preload ----------------------------------------

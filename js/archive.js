@@ -8,6 +8,7 @@
 
 import { $, el, picture, loopVideo, applySize, prefersReducedMotion, announce } from './dom.js';
 import { ARCHIVE, REVEAL_2026 } from './assets.js';
+import { mountMoment } from './media.js';
 
 export function buildArchive() {
   const root = $('[data-archive]');
@@ -67,6 +68,11 @@ function emptyYear(entry) {
     void_.append(
       el('p', { class: 'void__line', text: 'NO DATA' }),
       el('p', { class: 'void__line', text: 'архив повреждён' }),
+    );
+    // A band of dead-channel static sits where the photographs
+    // would have been. It is the only thing in this year.
+    mountMoment(void_, 'void-2024', { className: 'moment--band' });
+    void_.append(
       el('p', { class: 'void__line', text: 'фотографии отсутствуют' }),
       el('p', { class: 'void__line void__line--loud', text: 'мы не общались.' }),
     );
@@ -77,6 +83,7 @@ function emptyYear(entry) {
       el('p', { class: 'void__line', text: 'и вообще давайте не будем об этом.' }),
       searchBlock(),
     );
+    mountMoment(void_, 'void-2025', { className: 'moment--band' });
   }
 
   year.append(void_);

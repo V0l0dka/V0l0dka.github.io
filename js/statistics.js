@@ -7,6 +7,7 @@
 
 import { $, el, prefersReducedMotion, announce } from './dom.js';
 import { STATS } from './assets.js';
+import { mountMoment } from './media.js';
 
 export function buildStats() {
   const root = $('[data-stats]');
@@ -53,6 +54,13 @@ function toggle(node, stat) {
 
   if (open && stat.kind === 'particles') burst(node);
   if (open && stat.detail) announce(stat.detail);
+
+  // The pulse trace appears under ТРАВМ the first time it is
+  // opened, and is built only then - not on page load.
+  if (open && stat.id === 'injuries' && !node.dataset.moment) {
+    node.dataset.moment = '1';
+    mountMoment($('.stat__detail', node), 'stat-injuries', { className: 'moment--trace' });
+  }
 }
 
 /* Count from zero the first time the figure is scrolled to. */

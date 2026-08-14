@@ -27,6 +27,11 @@
   position: relative;
   margin-top: 2rem;
   aspect-ratio: 16 / 9;
+  /* A full-width 16:9 box on a laptop is ~650px tall, and with the
+     mission heading above it the bottom of the stage - where the
+     tongs and the bike live - fell below the fold. You cannot play
+     what you cannot see, so the stage is capped to leave room. */
+  max-height: 74vh;
   border: 1px solid #1e1e1e;
   background:
     linear-gradient(180deg, rgba(215,255,0,.03), transparent 40%),
@@ -69,16 +74,73 @@
   font-variant-numeric: tabular-nums;
 }
 
-.game__placeholder {
-  font-family: var(--mono);
-  font-size: .78rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: #3a3a3a;
-  border: 1px dashed #242424;
-  padding: 1rem 1.5rem;
-  margin: 0;
+/* The canvas must not swallow the page scroll. touch-action lets
+   the browser keep vertical panning for itself; the games only
+   call preventDefault while a run is actually in progress. */
+.game__stage canvas { touch-action: pan-y; }
+
+/* Once a run starts, the cursor belongs to the game. */
+.game__stage.is-playing { cursor: none; }
+.game__stage.is-playing canvas { touch-action: none; }
+
+/* ---------- start / result overlay ---------------------------
+   One piece of furniture shared by all three games, so they read
+   as one system rather than three invented UIs. */
+
+.game__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
   text-align: center;
+  background: rgba(5, 5, 5, .62);
+  backdrop-filter: blur(3px);
+}
+
+.game__overlay[hidden] { display: none; }
+
+.game__verdict {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  margin: 0;
+  color: var(--off-white);
+}
+
+.game__verdict:empty { display: none; }
+.game__verdict--win  { color: var(--acid); }
+.game__verdict--lose { color: var(--coal); }
+
+.game__hint {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  color: var(--grey);
+  margin: 0;
+}
+
+.game__hint:empty { display: none; }
+
+.game__btn { min-height: 44px; }
+
+/* The counter turns warning-coloured on the last life. */
+.hud__value.is-danger { color: var(--coal); }
+
+/* ---------- diving: back to editorial ------------------------
+   When all three items are recovered the stage lifts out of the
+   deep blue and rejoins the rest of the page. */
+
+.game--deep .game__stage {
+  transition: background 1400ms var(--ease), border-color 1400ms var(--ease);
+}
+
+.game--deep.is-surfaced .game__stage {
+  background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+  border-color: var(--acid);
 }
 
 /* Result banners, used from Phase 2 onward. */

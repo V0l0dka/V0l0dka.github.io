@@ -6,6 +6,8 @@
    ============================================================ */
 
 import { $, $$, prefersReducedMotion, announce } from './dom.js';
+import { mountMoment } from './media.js';
+import { sfx } from './audio.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -173,17 +175,43 @@ export function initQuestion() {
    ============================================================ */
 
 export function initGift() {
+  const panel = $('[data-gift-panel]');
   const equip = $('[data-gift-equip]');
-  const stat = $('[data-gift-stat]');
+  const armorClass = $('[data-gift-class]');
+  const stats = $('[data-gift-stats]');
   const word = $('[data-gift-word]');
+  const slot = $('[data-gift-slot]');
   if (!equip) return;
+
+  // The armour class card is revealed on approach, before the
+  // button is touched, so the sequence has a beat of its own.
+  const io = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) return;
+    io.disconnect();
+    mountMoment(slot, 'tmnt-hero', { className: 'moment--hero' });
+    setTimeout(() => {
+      armorClass.hidden = false;
+      panel?.classList.add('is-armed');
+    }, prefersReducedMotion() ? 0 : 500);
+  }, { threshold: 0.4 });
+
+  io.observe(panel || equip);
 
   equip.addEventListener('click', async () => {
     equip.disabled = true;
-    stat.hidden = false;
-    announce('+100 ARMOR');
-    await wait(prefersReducedMotion() ? 60 : 700);
+    sfx.equip();
+    panel?.classList.add('is-equipped');
+    mountMoment(slot, 'tmnt-armor', { className: 'moment--hero' });
+
+    const beat = prefersReducedMotion() ? 40 : 520;
+
+    await wait(beat);
+    stats.hidden = false;
+    announce('+100 ARMOR, +50 STYLE, +бесконечный CHAOS');
+
+    await wait(beat * 1.6);
     word.hidden = false;
+    announce('Подарок');
   });
 }
 

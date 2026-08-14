@@ -141,8 +141,9 @@
 
 <!-- ============================================================
      CHAPTER 06 - MINI GAMES
-     Phase 1: framed placeholders that announce themselves and
-     can be dismissed. Real games land in Phase 2.
+     Three canvas games. Each mounts into its own [data-game-stage]
+     and starts only when its button is pressed, so nothing runs
+     or captures input just because you scrolled past it.
      ============================================================ -->
 <section class="chapter chapter--games" id="games" aria-label="Мини-игры">
   <div class="games__lead">
@@ -158,7 +159,6 @@
         <span class="hud__label">COALS</span>
         <span class="hud__value" data-hud="coal">00 / 10</span>
       </div>
-      <p class="game__placeholder">игра появится в следующей версии</p>
     </div>
   </article>
 
@@ -170,7 +170,6 @@
         <span class="hud__label">SPEED</span>
         <span class="hud__value" data-hud="surron">000 KM/H</span>
       </div>
-      <p class="game__placeholder">игра появится в следующей версии</p>
     </div>
   </article>
 
@@ -182,7 +181,6 @@
         <span class="hud__label">RECOVERED</span>
         <span class="hud__value" data-hud="diving">0 / 3</span>
       </div>
-      <p class="game__placeholder">игра появится в следующей версии</p>
     </div>
   </article>
 </section>
@@ -214,9 +212,35 @@
 <section class="chapter chapter--gift" id="gift" aria-label="Подарок">
   <div class="gift" data-gift>
     <p class="gift__tag">LEGENDARY ITEM</p>
-    <div class="gift__art" data-gift-art aria-hidden="true"></div>
+
+    <!-- Comic panel. Halftone + speed lines are drawn in CSS; the
+         shell plate is inline SVG. No third-party artwork. -->
+    <div class="gift__panel" data-gift-panel aria-hidden="true">
+      <div class="gift__rays"></div>
+      <div class="gift__halftone"></div>
+
+      <svg class="gift__shell" viewBox="0 0 200 200" role="presentation">
+        <g class="gift__shell-g">
+          <circle cx="100" cy="100" r="72" class="shell-plate"/>
+          <path d="M100 28 L148 58 L148 142 L100 172 L52 142 L52 58 Z" class="shell-hex"/>
+          <path d="M100 46 L132 66 L132 134 L100 154 L68 134 L68 66 Z" class="shell-hex shell-hex--in"/>
+          <path d="M52 78 L148 78 M52 122 L148 122 M100 28 L100 172" class="shell-seam"/>
+        </g>
+      </svg>
+
+      <div class="gift__slot" data-gift-slot></div>
+    </div>
+
+    <p class="gift__class" data-gift-class hidden>ARMOR CLASS: <b>TURTLE</b></p>
+
     <button class="btn btn--acid" data-gift-equip>EQUIP</button>
-    <p class="gift__stat" data-gift-stat hidden>+100 ARMOR</p>
+
+    <ul class="gift__stats" data-gift-stats hidden>
+      <li>+100 ARMOR</li>
+      <li>+50 STYLE</li>
+      <li>+∞ CHAOS</li>
+    </ul>
+
     <p class="gift__word" data-gift-word hidden>ПОДАРОК</p>
   </div>
 </section>
