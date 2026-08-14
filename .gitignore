@@ -10,3 +10,10 @@ Thumbs.db
 .env.*
 *.pem
 *.key
+
+# camera originals. These are the straight-off-the-phone files that
+# congrats/media/encode.sh reads. They are 50-150 MB each: GitHub
+# rejects any single file over 100 MB, and anything committed stays in
+# git history forever. Only the encoded .mp4 outputs get committed.
+*.MOV
+*.mov

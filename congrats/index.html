@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a0f2e">
+  <meta name="description" content="A birthday page.">
+  <title>Happy Birthday!</title>
+  <link rel="stylesheet" href="/congrats/congrats.css">
+</head>
+
+<!--
+  ============================================================
+  WHAT TO EDIT IN THIS FILE
+  ============================================================
+  1. Replace every NAME with the birthday person's name.
+  2. Replace the text inside <h1>, <h2> and <p> tags.
+  3. Drop your photos/videos into /congrats/media/ using the
+     exact filenames shown in the grey placeholder boxes.
+  4. To add a slide: copy any <section class="slide"> block and
+     paste it before the closing </div> of .deck. Everything
+     else (dots, arrows, counter) updates by itself.
+  You do not need to touch congrats.js. Ever.
+  ============================================================
+-->
+
+<body>
+  <!-- Confetti is painted here. Purely decorative. -->
+  <canvas class="confetti" data-confetti-canvas aria-hidden="true"></canvas>
+
+  <!-- Thin bar across the top showing how far through the deck you are. -->
+  <div class="progress" role="presentation"><span data-progress-fill></span></div>
+
+  <div class="deck" data-deck>
+
+    <!-- ========== SLIDE 1: opening ========== -->
+    <section class="slide slide--title" aria-label="Opening">
+      <div class="slide__inner">
+        <p class="eyebrow">Today is the day</p>
+        <h1 class="title">
+          Happy Birthday,
+          <span class="title__name">NAME</span>
+        </h1>
+        <p class="lede">Eight slides. Some of them have you in them. Press the button.</p>
+        <button class="btn btn--primary" data-action="confetti">
+          <span class="btn__icon" aria-hidden="true">🎉</span>
+          Let's go
+        </button>
+        <p class="hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd>, swipe, or the arrows below</p>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 2: one big photo ========== -->
+    <section class="slide" aria-label="Photo">
+      <div class="slide__inner">
+        <h2 class="heading">This one, for a start</h2>
+        <figure class="frame frame--photo" data-frame data-filename="photo-1.jpg">
+          <img src="/congrats/media/photo-1.jpg" alt="" loading="lazy" decoding="async">
+          <figcaption>Write the caption here. Dates and in-jokes both work.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 3: first video (portrait) ========== -->
+    <section class="slide" aria-label="Video message">
+      <div class="slide__inner">
+        <h2 class="heading">A message</h2>
+        <figure class="frame frame--reel" data-frame data-filename="video-1.mp4">
+          <video
+            data-slide-video
+            playsinline
+            preload="metadata"
+            poster="/congrats/media/video-1-poster.jpg">
+            <source src="/congrats/media/video-1.mp4" type="video/mp4">
+          </video>
+          <div class="video__controls">
+            <button class="btn btn--round" data-action="video-toggle" aria-label="Play or pause">
+              <span data-video-icon>▶</span>
+            </button>
+            <button class="btn btn--round" data-action="video-mute" aria-label="Mute or unmute">
+              <span data-mute-icon>🔊</span>
+            </button>
+            <div class="video__bar"><span data-video-progress></span></div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 4: gallery, click any photo to enlarge ========== -->
+    <section class="slide" aria-label="Gallery">
+      <div class="slide__inner slide__inner--wide">
+        <h2 class="heading">The archive</h2>
+        <p class="sub">Tap any of them.</p>
+        <ul class="gallery">
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-1.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-1.jpg" alt="Gallery photo 1" loading="lazy" decoding="async"></button></li>
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-2.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-2.jpg" alt="Gallery photo 2" loading="lazy" decoding="async"></button></li>
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-3.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-3.jpg" alt="Gallery photo 3" loading="lazy" decoding="async"></button></li>
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-4.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-4.jpg" alt="Gallery photo 4" loading="lazy" decoding="async"></button></li>
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-5.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-5.jpg" alt="Gallery photo 5" loading="lazy" decoding="async"></button></li>
+          <li><button class="frame frame--thumb" data-frame data-filename="gal-6.jpg" data-action="lightbox">
+            <img src="/congrats/media/gal-6.jpg" alt="Gallery photo 6" loading="lazy" decoding="async"></button></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 5: reveal cards ========== -->
+    <section class="slide" aria-label="Wishes">
+      <div class="slide__inner slide__inner--wide">
+        <h2 class="heading">Open them one at a time</h2>
+        <ul class="cards">
+          <li>
+            <button class="card" data-action="flip" aria-expanded="false">
+              <span class="card__front"><span class="card__num">01</span>Open</span>
+              <span class="card__back">Put the first wish here.</span>
+            </button>
+          </li>
+          <li>
+            <button class="card" data-action="flip" aria-expanded="false">
+              <span class="card__front"><span class="card__num">02</span>Open</span>
+              <span class="card__back">Put the second wish here.</span>
+            </button>
+          </li>
+          <li>
+            <button class="card" data-action="flip" aria-expanded="false">
+              <span class="card__front"><span class="card__num">03</span>Open</span>
+              <span class="card__back">Put the third wish here.</span>
+            </button>
+          </li>
+          <li>
+            <button class="card" data-action="flip" aria-expanded="false">
+              <span class="card__front"><span class="card__num">04</span>Open</span>
+              <span class="card__back">Put the fourth wish here.</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 6: second video (portrait) ========== -->
+    <section class="slide" aria-label="Second video">
+      <div class="slide__inner">
+        <h2 class="heading">And one more</h2>
+        <figure class="frame frame--reel" data-frame data-filename="video-2.mp4">
+          <video
+            data-slide-video
+            playsinline
+            preload="metadata"
+            poster="/congrats/media/video-2-poster.jpg">
+            <source src="/congrats/media/video-2.mp4" type="video/mp4">
+          </video>
+          <div class="video__controls">
+            <button class="btn btn--round" data-action="video-toggle" aria-label="Play or pause">
+              <span data-video-icon>▶</span>
+            </button>
+            <button class="btn btn--round" data-action="video-mute" aria-label="Mute or unmute">
+              <span data-mute-icon>🔊</span>
+            </button>
+            <div class="video__bar"><span data-video-progress></span></div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 7: the cake ========== -->
+    <section class="slide slide--cake" aria-label="Blow out the candles">
+      <div class="slide__inner">
+        <h2 class="heading">Blow them out</h2>
+        <p class="sub" data-cake-status>Tap each candle.</p>
+
+        <div class="cake" data-cake>
+          <div class="cake__candles">
+            <button class="candle is-lit" data-candle aria-label="Candle 1"><span class="candle__flame"></span></button>
+            <button class="candle is-lit" data-candle aria-label="Candle 2"><span class="candle__flame"></span></button>
+            <button class="candle is-lit" data-candle aria-label="Candle 3"><span class="candle__flame"></span></button>
+            <button class="candle is-lit" data-candle aria-label="Candle 4"><span class="candle__flame"></span></button>
+            <button class="candle is-lit" data-candle aria-label="Candle 5"><span class="candle__flame"></span></button>
+          </div>
+          <div class="cake__tier cake__tier--top"></div>
+          <div class="cake__tier cake__tier--mid"></div>
+          <div class="cake__tier cake__tier--base"></div>
+          <div class="cake__plate"></div>
+        </div>
+
+        <button class="btn btn--ghost" data-action="relight" hidden>Light them again</button>
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 8: closing ========== -->
+    <section class="slide slide--title" aria-label="Closing">
+      <div class="slide__inner">
+        <h2 class="title">That's the whole thing</h2>
+        <p class="lede">Last words go here. Make them count, there is nothing after this.</p>
+        <div class="btn-row">
+          <button class="btn btn--primary" data-action="confetti">More confetti</button>
+          <button class="btn btn--ghost" data-action="restart">Watch again</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.deck -->
+
+  <!-- Bottom control bar: prev, dots, next -->
+  <nav class="controls" aria-label="Slide navigation">
+    <button class="nav-btn" data-action="prev" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+    </button>
+    <ol class="dots" data-dots></ol>
+    <button class="nav-btn" data-action="next" aria-label="Next slide">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg>
+    </button>
+  </nav>
+
+  <!-- Top-right utilities -->
+  <div class="toolbar">
+    <button class="nav-btn" data-action="music" aria-pressed="false" aria-label="Toggle music">
+      <span data-music-icon>♪</span>
+    </button>
+    <button class="nav-btn" data-action="fullscreen" aria-pressed="false" aria-label="Toggle fullscreen">
+      <span data-fullscreen-icon>⛶</span>
+    </button>
+  </div>
+
+  <!-- Enlarged gallery photo. Hidden until a thumbnail is clicked. -->
+  <dialog class="lightbox" data-lightbox aria-label="Enlarged photo">
+    <img data-lightbox-img src="" alt="">
+    <button class="btn btn--round lightbox__close" data-action="lightbox-close" aria-label="Close">✕</button>
+  </dialog>
+
+  <!-- Announces slide changes to screen readers. Invisible on screen. -->
+  <p class="sr-only" aria-live="polite" data-live></p>
+
+  <!-- Background music. preload="none" means it downloads only if switched on. -->
+  <audio data-music-el loop preload="none">
+    <source src="/congrats/media/music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="/congrats/congrats.js"></script>
+</body>
+</html>

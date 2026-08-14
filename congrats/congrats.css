@@ -1,0 +1,680 @@
+/* ============================================================
+   Birthday deck. Self-contained: this file does not depend on
+   the site-wide /style.css and nothing else depends on it.
+
+   Deliberately one fixed dark theme, not light/dark responsive.
+   A celebration page should look the same for everybody who
+   opens the link.
+   ============================================================ */
+
+:root {
+  --night:      #1a0f2e;
+  --night-2:    #2a1748;
+  --ink:        #f6f1ff;
+  --ink-muted:  #b9a9d6;
+
+  --gold:       #ffc857;
+  --pink:       #ff6b9d;
+  --violet:     #a06bff;
+  --mint:       #5ee7c0;
+
+  --radius:     18px;
+  --radius-sm:  10px;
+  --ring:       0 0 0 3px rgba(255, 200, 87, .55);
+
+  /* Slide transition length. Set to 0 by the reduced-motion block below. */
+  --slide-ms:   460ms;
+  --ease:       cubic-bezier(.22, .8, .3, 1);
+
+  --bar-h:      clamp(64px, 11vh, 92px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(1100px 700px at 15% -10%, rgba(160, 107, 255, .30), transparent 60%),
+    radial-gradient(900px 600px at 92% 8%,   rgba(255, 107, 157, .22), transparent 62%),
+    radial-gradient(800px 800px at 50% 115%, rgba(94, 231, 192, .14), transparent 60%),
+    var(--night);
+  color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;              /* the deck never scrolls the page itself */
+  overscroll-behavior: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:where(button):focus-visible,
+:where(a, dialog):focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ---------- confetti canvas ---------- */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;          /* clicks pass straight through */
+  z-index: 60;
+}
+
+/* ---------- progress bar ---------- */
+
+.progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, .08);
+  z-index: 40;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), var(--pink), var(--violet));
+  transition: width var(--slide-ms) var(--ease);
+}
+
+/* ---------- deck and slides ---------- */
+
+.deck {
+  position: relative;
+  height: 100%;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  /* `safe` stops a slide taller than the screen from being centred so
+     hard that its top scrolls out of reach. */
+  place-items: safe center;
+  /* Bottom padding keeps content clear of the floating control bar. */
+  padding: clamp(1.25rem, 4vw, 3rem);
+  padding-bottom: calc(var(--bar-h) + 1rem);
+  /* Tall slides (long gallery on a small phone) scroll inside themselves.
+     The page itself never scrolls. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(var(--from, 3%), 0, 0) scale(.985);
+  transition:
+    opacity    var(--slide-ms) var(--ease),
+    transform  var(--slide-ms) var(--ease),
+    visibility 0s linear var(--slide-ms);
+}
+
+.slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    opacity    var(--slide-ms) var(--ease),
+    transform  var(--slide-ms) var(--ease),
+    visibility 0s;
+}
+
+.slide__inner {
+  width: 100%;
+  max-width: 44rem;
+  text-align: center;
+  display: grid;
+  gap: 1.15rem;
+  justify-items: center;
+}
+
+.slide__inner--wide { max-width: 62rem; }
+
+/* ---------- type ---------- */
+
+.eyebrow {
+  margin: 0;
+  font-size: .8rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.1rem, 7.5vw, 4.4rem);
+  line-height: 1.04;
+  letter-spacing: -.02em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.title__name {
+  display: block;
+  background: linear-gradient(100deg, var(--gold), var(--pink) 45%, var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 4.2vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+}
+
+.lede {
+  margin: 0;
+  max-width: 34rem;
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.sub { margin: 0; color: var(--ink-muted); }
+
+.hint {
+  margin: .25rem 0 0;
+  font-size: .82rem;
+  color: var(--ink-muted);
+  opacity: .8;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: .1em .4em;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .06);
+  font: inherit;
+  font-size: .9em;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  padding: .8rem 1.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 650;
+  color: var(--night);
+  background: var(--ink);
+  cursor: pointer;
+  transition: transform 140ms var(--ease), box-shadow 140ms var(--ease), background 140ms;
+}
+
+.btn:hover  { transform: translateY(-2px); }
+.btn:active { transform: translateY(0) scale(.97); }
+
+.btn--primary {
+  background: linear-gradient(100deg, var(--gold), var(--pink));
+  box-shadow: 0 10px 30px -10px rgba(255, 107, 157, .8);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, .28);
+}
+
+.btn--ghost:hover { background: rgba(255, 255, 255, .08); }
+
+.btn__icon { font-size: 1.15em; }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  justify-content: center;
+}
+
+.btn--round {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .14);
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.btn--round:hover { background: rgba(255, 255, 255, .24); }
+
+/* ---------- media frames ----------
+   A .frame is a fixed-shape container. The placeholder lives on the
+   frame itself, so if the image or video file is missing the layout
+   is identical - you just see the filename you still need to add. */
+
+.frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(255, 255, 255, .05);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, .75);
+}
+
+.frame--photo { aspect-ratio: 4 / 3; }
+.frame--video { aspect-ratio: 16 / 9; }
+.frame--thumb { aspect-ratio: 1 / 1; cursor: pointer; }
+
+/* Phone footage, held upright. A 9:16 frame sized by WIDTH would be
+   taller than the screen on a desktop monitor, so it is sized by
+   height instead and the width follows from the aspect ratio. */
+.frame--reel {
+  aspect-ratio: 9 / 16;
+  width: auto;
+  height: min(64vh, 660px);
+  margin: 0 auto;
+}
+
+.frame img,
+.frame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.frame figcaption {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 2.5rem 1rem .9rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .8));
+  font-size: .9rem;
+  text-align: left;
+  color: var(--ink);
+}
+
+/* Placeholder state, switched on by congrats.js when a file 404s. */
+.frame.is-missing {
+  border: 1px dashed rgba(255, 255, 255, .28);
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255, 255, 255, .035) 0 12px,
+      transparent 12px 24px);
+  display: grid;
+  place-items: center;
+}
+
+.frame.is-missing > img,
+.frame.is-missing > video,
+.frame.is-missing > figcaption,
+.frame.is-missing > .video__controls { display: none; }
+
+.frame.is-missing::after {
+  content: "add  " attr(data-filename);
+  font-size: clamp(.7rem, 1.7vw, .85rem);
+  letter-spacing: .06em;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: .5rem;
+  word-break: break-all;
+}
+
+.frame--thumb:hover img { transform: scale(1.05); }
+.frame--thumb img { transition: transform 300ms var(--ease); }
+
+/* ---------- video controls ---------- */
+
+.video__controls {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 2rem .8rem .8rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .75));
+}
+
+.video__bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .25);
+  overflow: hidden;
+}
+
+.video__bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+}
+
+/* ---------- gallery ---------- */
+
+.gallery {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(.5rem, 1.5vw, .9rem);
+}
+
+/* ---------- reveal cards ---------- */
+
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: .9rem;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  min-height: 150px;
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .06);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color 200ms, background 200ms, transform 200ms var(--ease);
+}
+
+.card:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, .35); }
+
+.card__front,
+.card__back {
+  grid-area: 1 / 1;
+  transition: opacity 260ms var(--ease), transform 260ms var(--ease);
+}
+
+.card__front {
+  display: grid;
+  gap: .5rem;
+  justify-items: center;
+  font-weight: 650;
+  color: var(--ink-muted);
+}
+
+.card__num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.card__back {
+  opacity: 0;
+  transform: translateY(8px);
+  text-wrap: pretty;
+}
+
+.card.is-open { background: rgba(255, 200, 87, .1); border-color: var(--gold); }
+.card.is-open .card__front { opacity: 0; transform: translateY(-8px); }
+.card.is-open .card__back  { opacity: 1; transform: translateY(0); }
+
+/* ---------- cake ---------- */
+
+.cake {
+  position: relative;
+  width: min(320px, 78vw);
+  margin: .5rem 0;
+  display: grid;
+  justify-items: center;
+}
+
+.cake__candles {
+  display: flex;
+  gap: clamp(10px, 3.5vw, 20px);
+  margin-bottom: -4px;
+  z-index: 2;
+}
+
+.candle {
+  position: relative;
+  width: 12px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px 3px 0 0;
+  background: repeating-linear-gradient(45deg, var(--pink) 0 5px, #fff 5px 10px);
+  cursor: pointer;
+}
+
+.candle__flame {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 12px;
+  height: 18px;
+  margin-left: -6px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, #fff 0 12%, var(--gold) 35%, #ff7a2f 75%);
+  box-shadow: 0 0 22px 6px rgba(255, 168, 60, .55);
+  transform-origin: 50% 100%;
+  animation: flicker 900ms ease-in-out infinite alternate;
+}
+
+.candle:not(.is-lit) .candle__flame {
+  opacity: 0;
+  transform: scale(.2) translateY(-10px);
+  transition: opacity 260ms, transform 260ms;
+}
+
+@keyframes flicker {
+  from { transform: scale(1)    rotate(-3deg); }
+  to   { transform: scale(1.14) rotate(3deg);  }
+}
+
+.cake__tier {
+  border-radius: 8px;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, .18);
+}
+
+.cake__tier--top  { width: 62%;  height: 26px; background: #ffd9e6; border-radius: 10px 10px 4px 4px; }
+.cake__tier--mid  { width: 82%;  height: 34px; background: var(--pink); }
+.cake__tier--base { width: 100%; height: 44px; background: #b45c8a; border-radius: 4px 4px 12px 12px; }
+
+.cake__plate {
+  width: 118%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .22);
+  margin-top: 4px;
+}
+
+/* ---------- bottom controls ---------- */
+
+.controls {
+  position: fixed;
+  left: 50%;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(26, 15, 46, .72);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .9);
+}
+
+.toolbar {
+  position: fixed;
+  top: max(.9rem, env(safe-area-inset-top));
+  right: max(.9rem, env(safe-area-inset-right));
+  z-index: 50;
+  display: flex;
+  gap: .4rem;
+}
+
+.nav-btn {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .07);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background 160ms, opacity 160ms, transform 160ms var(--ease);
+}
+
+.nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .18); }
+.nav-btn:active:not(:disabled) { transform: scale(.92); }
+
+.nav-btn:disabled { opacity: .3; cursor: default; }
+
+.nav-btn[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--night);
+  border-color: var(--gold);
+}
+
+.nav-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dots {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  margin: 0;
+  padding: 0 .3rem;
+  /* Guard for when the deck grows past what fits on a phone. */
+  max-width: min(60vw, 420px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dots::-webkit-scrollbar { display: none; }
+
+.dots li { flex: 0 0 auto; }
+
+.dots button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.dots button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .3);
+  transition: width 260ms var(--ease), background 260ms;
+}
+
+.dots button[aria-current="true"]::before {
+  width: 22px;
+  background: var(--gold);
+}
+
+/* ---------- lightbox ---------- */
+
+.lightbox {
+  width: min(92vw, 1100px);
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  overflow: visible;
+}
+
+.lightbox::backdrop {
+  background: rgba(10, 5, 20, .88);
+  backdrop-filter: blur(6px);
+}
+
+.lightbox img {
+  display: block;
+  width: 100%;
+  max-height: 84vh;
+  object-fit: contain;
+  border-radius: var(--radius);
+}
+
+.lightbox__close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  background: var(--ink);
+  color: var(--night);
+}
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 560px) {
+  .frame--photo { aspect-ratio: 3 / 4; }
+  .gallery { grid-template-columns: repeat(2, 1fr); }
+  .card { min-height: 120px; }
+}
+
+/* ---------- respect the OS "reduce motion" setting ----------
+   Slides then cut instead of sliding, flames stop flickering,
+   and congrats.js reads this same setting to skip confetti. */
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --slide-ms: 1ms; }
+
+  .candle__flame { animation: none; }
+
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
