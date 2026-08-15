@@ -1,103 +1,180 @@
 /* ============================================================
-   MISSION 03 - GO DEEPER
+   ГЛУБЖЕ - underwater search
 
-   A dark underwater scene. The pointer is a torch. Three objects
-   are hidden in it and have to be found.
+   A dark seabed. The pointer is a torch. Fifteen objects are
+   scattered in it: five earrings, five Revo cans, five sets of
+   keys. The torch reveals; a click or tap collects.
 
-   The torch is a real mask, not a decoration: the scene is drawn,
-   then everything outside the cone is painted back over with near
-   black using destination-in compositing. Objects are genuinely
-   invisible until the light reaches them, so it cannot be cheated
-   by turning up screen brightness.
+   The torch is a real mask, not a decoration: the scene is drawn
+   into a buffer, then everything outside the cone is erased with
+   destination-in compositing. Objects are genuinely absent until
+   the light reaches them, so the puzzle cannot be defeated by
+   turning up screen brightness.
    ============================================================ */
 
-import { createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite } from './engine.js';
+import {
+  createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite,
+} from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
 import { asset } from '../media-config.js';
 
-/* The three real objects. `sprite` is the cut-out photograph;
-   `h` is its drawn height in CSS pixels, chosen per object so a
-   can, a pair of keys and a pair of earrings read at plausible
-   relative sizes underwater rather than all at one size. */
-export const ITEMS = [
-  { id: 'earring', label: 'серьёжка', media: 'earring', h: 76 },
-  { id: 'revo', label: 'Revo', media: 'revo', h: 124 },
-  { id: 'keys', label: 'ключи', media: 'keys', h: 86 },
+/* Five of each. `baseH` is the drawn height in CSS pixels before
+   per-object variation, chosen so a can, keys and earrings read at
+   plausible relative sizes rather than all at one size. */
+export const KINDS = [
+  { id: 'earring', label: 'СЕРЁЖКИ', media: 'earring', count: 5, baseH: 62 },
+  { id: 'revo', label: 'REVO', media: 'revo', count: 5, baseH: 96 },
+  { id: 'keys', label: 'КЛЮЧИ', media: 'keys', count: 5, baseH: 70 },
 ];
 
-const TORCH_R = 116;      // torch radius, CSS px
-const FIND_R = 46;        // how close the centre must get
+export const TOTAL = KINDS.reduce((n, k) => n + k.count, 0);
+
+const TORCH_R = 124;      // torch radius, CSS px
+const MIN_HIT = 46;       // smallest tappable radius, CSS px
+const DISTRACTORS = 7;
 
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
   const overlay = createOverlay(stageEl, { startLabel: 'ПОГРУЖЕНИЕ' });
   const pointer = createPointer(stageEl, () => state.playing);
 
-  // Scene is drawn here first, then masked onto the visible canvas.
+  // Scene buffer, masked by the torch before being shown.
   const buffer = document.createElement('canvas');
   const bctx = buffer.getContext('2d');
 
-  // Second buffer, used to tint each object so it belongs to the
-  // water. Drawing an object then compositing a blue wash over it
-  // with source-atop keeps the wash inside the cut-out's alpha,
-  // so it never spills into a rectangle around the shape.
+  // Per-object tint buffer. Drawing an object then compositing a
+  // blue wash with source-atop keeps the wash inside the cut-out's
+  // alpha, so it never spills into a rectangle around the shape.
   const tint = document.createElement('canvas');
   const tctx = tint.getContext('2d');
 
   const sprites = Object.fromEntries(
-    ITEMS.map((item) => [item.id, loadSprite(asset(item.media), stageEl)]),
+    KINDS.map((k) => [k.id, loadSprite(asset(k.media), stageEl)]),
+  );
+
+  const catEls = Object.fromEntries(
+    KINDS.map((k) => [k.id, stageEl.querySelector(`[data-hud-cat="${k.id}"]`)]),
   );
 
   const state = {
     playing: false,
-    found: new Set(),
     items: [],
+    debris: [],
     bubbles: [],
     t: 0,
     flash: 0,
+    nudge: null,        // {x, y, life} - feedback for a wrong tap
     torch: { x: 0, y: 0 },
     done: false,
   };
 
-  const paint = () => {
-    hud.textContent = `${state.found.size} / ${ITEMS.length}`;
-  };
+  const foundCount = (id) => state.items.filter((i) => i.kind === id && i.found).length;
+  const totalFound = () => state.items.filter((i) => i.found).length;
 
-  /* ---------- placement ---------- */
+  function paint() {
+    for (const k of KINDS) {
+      if (catEls[k.id]) catEls[k.id].textContent = `${foundCount(k.id)} / ${k.count}`;
+    }
+    hud.textContent = `${totalFound()} / ${TOTAL}`;
+  }
+
+  /* ============================================================
+     PLACEMENT
+
+     Randomised every run, under rules that keep the scene fair:
+     inside a margin, clear of the HUD, and never crowding another
+     collectible. Without the spacing rule two objects land on top
+     of each other and one becomes uncollectable.
+     ============================================================ */
 
   function place() {
     const { w, h } = stage.size;
-    // Spread across thirds so two never land on top of each other,
-    // and keep clear of the edges where the torch cannot reach.
-    state.items = ITEMS.map((item, i) => ({
-      ...item,
-      x: w * (0.2 + i * 0.3) + rand(-w * 0.06, w * 0.06),
-      y: h * rand(0.32, 0.76),
-      bob: rand(0, Math.PI * 2),
-      tilt: rand(-0.5, 0.5),
-    }));
+
+    const margin = Math.max(46, Math.min(w, h) * 0.09);
+    // The HUD occupies the top-left. Nothing may spawn beneath it.
+    const hudBox = { w: Math.min(w * 0.55, 240), h: 140 };
+    const inHud = (x, y) => x < hudBox.w && y < hudBox.h;
+
+    const placed = [];
+    const MIN_GAP = Math.min(120, Math.max(74, Math.min(w, h) * 0.13));
+
+    const spot = (minGap) => {
+      // Bounded retry, then relax the spacing rather than loop for
+      // ever on a small screen where the rule cannot be satisfied.
+      for (let tries = 0; tries < 220; tries++) {
+        const x = rand(margin, w - margin);
+        const y = rand(margin, h - margin);
+        if (inHud(x, y)) continue;
+        if (placed.every((p) => Math.hypot(p.x - x, p.y - y) >= minGap)) {
+          placed.push({ x, y });
+          return { x, y };
+        }
+      }
+      if (minGap > 40) return spot(minGap * 0.75);
+      const fallback = { x: rand(margin, w - margin), y: rand(margin, h - margin) };
+      placed.push(fallback);
+      return fallback;
+    };
+
+    const items = [];
+    for (const kind of KINDS) {
+      for (let n = 0; n < kind.count; n++) {
+        const { x, y } = spot(MIN_GAP);
+
+        /* Variation, so five of the same object never read as five
+           copies of one sprite. `depth` drives how dim and how soft
+           an object is: far ones are genuinely harder to notice.
+           The scale floor keeps even the smallest one findable. */
+        items.push({
+          kind: kind.id,
+          label: kind.label,
+          baseH: kind.baseH,
+          x, y,
+          scale: rand(0.62, 1.18),
+          depth: rand(0, 1),
+          tiltBase: rand(-0.55, 0.55),
+          bob: rand(0, Math.PI * 2),
+          bobAmp: rand(1.5, 4),
+          found: false,
+          pop: 0,
+        });
+      }
+    }
+
+    state.items = items;
+
+    /* Environmental debris. Procedural shapes only - deliberately
+       NOT the real Revo/keys/earring art, which would turn the
+       search into a coin toss instead of a search. */
+    state.debris = Array.from({ length: DISTRACTORS }, () => {
+      const { x, y } = spot(MIN_GAP * 0.62);
+      return {
+        x, y,
+        r: rand(13, 30),
+        kind: Math.floor(rand(0, 3)),   // 0 stone, 1 shell, 2 bottle
+        tilt: rand(-0.8, 0.8),
+        depth: rand(0.3, 1),
+      };
+    });
   }
 
   function seedBubbles() {
     const { w, h } = stage.size;
     state.bubbles = Array.from({ length: prefersReducedMotion() ? 0 : 34 }, () => ({
-      x: rand(0, w),
-      y: rand(0, h),
-      r: rand(1.2, 4.4),
-      vy: rand(12, 40),
-      drift: rand(-8, 8),
-      a: rand(0.15, 0.5),
+      x: rand(0, w), y: rand(0, h),
+      r: rand(1.2, 4.4), vy: rand(12, 40),
+      drift: rand(-8, 8), a: rand(0.15, 0.5),
     }));
   }
 
   /* ---------- lifecycle ---------- */
 
   function reset() {
-    state.found.clear();
     state.done = false;
     state.t = 0;
     state.flash = 0;
+    state.nudge = null;
     place();
     seedBubbles();
     paint();
@@ -108,7 +185,7 @@ export function init(stageEl, hud) {
     state.playing = true;
     overlay.hide();
     loop.start();
-    announce('Найдите три предмета фонариком.');
+    announce(`Найдите ${TOTAL} предметов. Наведите фонарь и нажмите.`);
   }
 
   function finishAll() {
@@ -119,16 +196,78 @@ export function init(stageEl, hud) {
     overlay.show({
       verdict: 'ВСЁ НАЙДЕНО',
       tone: 'win',
-      label: 'ЕЩЁ РАЗ',
-      hint: '',
+      buttons: [
+        {
+          label: 'ВСПЛЫТЬ ↑',
+          onClick: () => document.dispatchEvent(
+            new CustomEvent('game:leave', { detail: { game: 'diving' } })),
+        },
+        { label: 'ЕЩЁ РАЗ', ghost: true, resumesPlay: true, onClick: start },
+      ],
     });
 
     announce('Всё найдено');
-    // The chapter reacts to this: js/scroll.js lifts the section
-    // back into the editorial style.
+    // js/main.js listens and lifts the stage back into the editorial
+    // palette; the games know nothing about the page.
     document.dispatchEvent(new CustomEvent('game:end', {
       detail: { game: 'diving', won: true },
     }));
+  }
+
+  /* ---------- geometry helpers ---------- */
+
+  const drawnSize = (item) => {
+    const sprite = sprites[item.kind];
+    const h = item.baseH * item.scale;
+    const ratio = sprite && sprite.ready ? sprite.img.width / sprite.img.height : 1;
+    return { w: h * ratio, h };
+  };
+
+  const litness = (item) => {
+    if (state.done) return 1;
+    const d = Math.hypot(item.x - state.torch.x, item.y - state.torch.y);
+    return Math.max(0, Math.min(1, 1 - d / TORCH_R));
+  };
+
+  /* ---------- collecting ---------- */
+
+  function tap(x, y) {
+    if (!state.playing) return;
+
+    // Nearest first, so overlapping objects resolve predictably.
+    const hit = state.items
+      .filter((i) => !i.found)
+      .map((i) => ({ i, d: Math.hypot(i.x - x, i.y - y) }))
+      .filter(({ i, d }) => {
+        const { w, h } = drawnSize(i);
+        // The visual may be small; the hitbox never drops below a
+        // comfortable thumb target.
+        return d <= Math.max(MIN_HIT, Math.max(w, h) * 0.6);
+      })
+      .sort((a, b) => a.d - b.d)[0];
+
+    if (hit) {
+      // Only collectable once the torch is actually on it, otherwise
+      // the game could be beaten by tapping blindly across the grid.
+      if (litness(hit.i) < 0.18) { nudge(x, y); return; }
+
+      hit.i.found = true;
+      hit.i.pop = 1;
+      state.flash = 1;
+      sfx.found();
+      paint();
+      announce(`Найдено: ${hit.i.label}`);
+      if (totalFound() === TOTAL) finishAll();
+      return;
+    }
+
+    // Debris, or empty water. Never punished, just acknowledged.
+    nudge(x, y);
+  }
+
+  function nudge(x, y) {
+    state.nudge = { x, y, life: 1 };
+    sfx.bubble();
   }
 
   /* ---------- simulation ---------- */
@@ -137,9 +276,13 @@ export function init(stageEl, hud) {
     const { w, h } = stage.size;
     state.t += dt;
     if (state.flash > 0) state.flash = Math.max(0, state.flash - dt * 1.6);
+    if (state.nudge) {
+      state.nudge.life -= dt * 1.8;
+      if (state.nudge.life <= 0) state.nudge = null;
+    }
 
     // Torch eases toward the pointer; idles in a slow drift so the
-    // scene is not a dead black rectangle before you start.
+    // scene is not a dead black rectangle before play starts.
     const tx = pointer.pos.active ? pointer.pos.x : w * (0.5 + Math.sin(state.t * 0.4) * 0.22);
     const ty = pointer.pos.active ? pointer.pos.y : h * (0.5 + Math.cos(state.t * 0.31) * 0.16);
     state.torch.x += (tx - state.torch.x) * Math.min(1, dt * 10);
@@ -151,106 +294,185 @@ export function init(stageEl, hud) {
       if (b.y < -8) { b.y = h + rand(0, 40); b.x = rand(0, w); }
     }
 
-    if (!state.playing) return;
-
     for (const item of state.items) {
-      if (state.found.has(item.id)) continue;
-      const d = Math.hypot(item.x - state.torch.x, item.y - state.torch.y);
-      if (d < FIND_R) {
-        state.found.add(item.id);
-        state.flash = 1;
-        sfx.found();
-        paint();
-        announce(`Найдено: ${item.label}`);
-        if (state.found.size === ITEMS.length) finishAll();
-        return;
-      }
+      if (item.pop > 0) item.pop = Math.max(0, item.pop - dt * 2);
     }
   }
 
   /* ---------- drawing ---------- */
 
-  /* Draw one real object into the water.
+  function drawDebris(ctx, d) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.tilt);
+    ctx.globalAlpha = 0.22 + (1 - d.depth) * 0.3;
+    ctx.fillStyle = '#0b2233';
+    ctx.strokeStyle = '#12384d';
+    ctx.lineWidth = 1.5;
 
-     `lit` is how close the torch is, 0..1. It drives brightness and
-     blue tint together: out of the beam an object is dim and almost
-     the colour of the water, which is what makes it hard to spot;
-     under the beam it warms up and becomes identifiable. That is
-     the whole game, so it is a gradient rather than a switch. */
-  function drawItem(ctx, item, lit, foundAlready) {
-    const sprite = sprites[item.id];
-    const y = item.y + Math.sin(state.t * 1.3 + item.bob) * 3;
-
-    if (!sprite || !sprite.ready) {
-      // Until the photograph arrives, a faint marker holds its place
-      // so nothing pops or shifts when it loads.
-      ctx.save();
-      ctx.globalAlpha = 0.25;
-      ctx.strokeStyle = '#7d97a8';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(item.x - 14, y - 14, 28, 28);
-      ctx.restore();
-      return;
+    if (d.kind === 0) {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, d.r, d.r * 0.68, 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    } else if (d.kind === 1) {
+      ctx.beginPath();
+      ctx.arc(0, 0, d.r * 0.8, Math.PI, 0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(i * d.r * 0.3, -d.r * 0.75);
+        ctx.stroke();
+      }
+    } else {
+      ctx.beginPath();
+      ctx.roundRect(-d.r * 0.32, -d.r * 0.5, d.r * 0.64, d.r * 1.1, 3);
+      ctx.fill(); ctx.stroke();
+      ctx.fillRect(-d.r * 0.12, -d.r * 0.85, d.r * 0.24, d.r * 0.4);
     }
+    ctx.restore();
+  }
 
-    const img = sprite.img;
-    const h = item.h;
-    const w = h * (img.width / img.height);
+  /* ---------- cached object layers ----------------------------
+     Every object used to be re-tinted and re-blurred from scratch on
+     every frame: one canvas reallocation plus two `ctx.filter` blur
+     passes each, times twenty-two objects, sixty times a second.
+     Canvas filters are rasterised on the CPU, so that was by far the
+     most expensive thing on the page - the diving stage rendered
+     roughly sixteen times slower per frame than the coal stage.
 
-    // Size the tint buffer to this object and paint it there first.
+     Both layers are now drawn once into their own small canvas and
+     reused. The shadow never changes at all. The body changes only
+     when the beam crosses into a new light step, so the blur runs a
+     handful of times per object for a whole dive instead of
+     thousands. Opacity is still applied live at draw time, so the
+     fade in and out of the torch stays perfectly smooth.
+
+     PAD leaves room for the blur to bleed past the sprite instead of
+     being clipped at the edge of the buffer. ---------------------- */
+  const PAD = 12;
+  const LIT_STEPS = 10;
+
+  const layerCanvas = (w, h) => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    tint.width = Math.max(1, Math.ceil(w * dpr));
-    tint.height = Math.max(1, Math.ceil(h * dpr));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil((w + PAD * 2) * dpr));
+    c.height = Math.max(1, Math.ceil((h + PAD * 2) * dpr));
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c, g };
+  };
+
+  /* The sprite only settles on its final size once the image has
+     loaded, so a cache built before that has to be thrown away. */
+  const invalidate = (item, w) => {
+    if (item.cacheW === w) return false;
+    item.cacheW = w;
+    item.shadowCv = null;
+    item.bodyCv = null;
+    item.bodyKey = '';
+    return true;
+  };
+
+  function shadowLayer(item, w, h) {
+    if (item.shadowCv) return item.shadowCv;
+    const { c, g } = layerCanvas(w, h);
+    g.filter = 'blur(4px)';
+    g.fillStyle = '#02080f';
+    g.beginPath();
+    g.ellipse(PAD + w / 2, PAD + h / 2 + h * 0.42, w * 0.42, h * 0.10, 0, 0, Math.PI * 2);
+    g.fill();
+    item.shadowCv = c;
+    return c;
+  }
+
+  function bodyLayer(item, w, h, lit) {
+    // Quantise the light, then render with the quantised value so the
+    // cached pixels always match the key they are stored under.
+    const step = Math.round(lit * LIT_STEPS);
+    const key = `${step}|${item.found ? 1 : 0}`;
+    if (item.bodyCv && item.bodyKey === key) return item.bodyCv;
+
+    const q = step / LIT_STEPS;
+    const sprite = sprites[item.kind];
+
+    if (!item.bodyCv) {
+      const made = layerCanvas(w, h);
+      item.bodyCv = made.c;
+      item.bodyCtx = made.g;
+    }
+    const g = item.bodyCtx;
+    g.clearRect(0, 0, w + PAD * 2, h + PAD * 2);
+
+    // Wash the sprite in the shared tint buffer first. This buffer is
+    // resized here rather than per frame, which is the point.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const tw = Math.max(1, Math.ceil(w * dpr));
+    const th = Math.max(1, Math.ceil(h * dpr));
+    if (tint.width !== tw || tint.height !== th) { tint.width = tw; tint.height = th; }
     tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     tctx.clearRect(0, 0, w, h);
-    tctx.drawImage(img, 0, 0, w, h);
+    tctx.drawImage(sprite.img, 0, 0, w, h);
 
-    /* Blue wash, kept inside the cut-out by source-atop.
-
-       These numbers are the difference between a puzzle and a
-       blank screen. The first pass was far too heavy: even under
-       the beam the objects stayed the colour of the water and
-       could not be identified. Out of the beam they should be
-       shapes you might miss; under it they should be obviously a
-       can, keys, earrings. */
+    // Deeper objects sit further into the water colour, so five of
+    // the same sprite do not all read at the same distance.
     tctx.globalCompositeOperation = 'source-atop';
-    tctx.fillStyle = `rgba(40, 110, 160, ${0.52 - lit * 0.44})`;
+    const wash = 0.42 + item.depth * 0.22 - q * 0.44;
+    tctx.fillStyle = `rgba(40, 110, 160, ${Math.max(0, wash).toFixed(3)})`;
     tctx.fillRect(0, 0, w, h);
 
-    // Acid confirmation once recovered.
-    if (foundAlready) {
+    if (item.found) {
       tctx.fillStyle = 'rgba(215, 255, 0, .30)';
       tctx.fillRect(0, 0, w, h);
     }
     tctx.globalCompositeOperation = 'source-over';
 
+    const blur = (1 - q) * (0.8 + item.depth * 1.1);
+    g.filter = `blur(${blur.toFixed(2)}px) brightness(${(0.8 + q * 0.8).toFixed(2)})`;
+    g.drawImage(tint, PAD, PAD, w, h);
+    g.filter = 'none';
+
+    item.bodyKey = key;
+    return item.bodyCv;
+  }
+
+  function drawItem(ctx, item) {
+    const sprite = sprites[item.kind];
+    const lit = litness(item);
+    const { w, h } = drawnSize(item);
+    const y = item.y + Math.sin(state.t * 1.3 + item.bob) * item.bobAmp;
+
+    if (!sprite || !sprite.ready) {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = '#7d97a8';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(item.x - w / 2, y - h / 2, w, h);
+      ctx.restore();
+      return;
+    }
+
+    invalidate(item, w);
+    const shadow = shadowLayer(item, w, h);
+    const body = bodyLayer(item, w, h, lit);
+
     ctx.save();
     ctx.translate(item.x, y);
+    ctx.rotate(item.tiltBase);
+    if (item.pop > 0) ctx.scale(1 + item.pop * 0.16, 1 + item.pop * 0.16);
 
-    // Objects sit slightly turned, as things do on a seabed.
-    ctx.rotate(item.tilt);
+    // Shadow grounds it on the seabed. Opacity still tracks the beam
+    // continuously - only the pixels are cached, not the fade.
+    ctx.globalAlpha = (0.26 + lit * 0.24) * (1 - item.depth * 0.35);
+    ctx.drawImage(shadow, -w / 2 - PAD, -h / 2 - PAD, w + PAD * 2, h + PAD * 2);
 
-    // A soft shadow under the object grounds it in the scene.
-    ctx.globalAlpha = 0.3 + lit * 0.25;
-    ctx.filter = 'blur(4px)';
-    ctx.fillStyle = '#02080f';
-    ctx.beginPath();
-    ctx.ellipse(0, h * 0.42, w * 0.42, h * 0.10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.filter = 'none';
-
-    // Slightly out of focus in the dark, sharp and lifted under the
-    // beam - the object "comes into the light" rather than switching
-    // on. brightness does the identifying work; blur does the hiding.
-    ctx.globalAlpha = 0.72 + lit * 0.28;
-    const blur = (1 - lit) * 1.1;
-    ctx.filter = `blur(${blur.toFixed(2)}px) brightness(${(0.85 + lit * 0.75).toFixed(2)})`;
-    ctx.drawImage(tint, -w / 2, -h / 2, w, h);
-    ctx.filter = 'none';
+    // Out of focus in the dark, sharp and lifted under the beam.
+    ctx.globalAlpha = (0.66 + lit * 0.34) * (1 - item.depth * 0.18);
+    ctx.drawImage(body, -w / 2 - PAD, -h / 2 - PAD, w + PAD * 2, h + PAD * 2);
     ctx.globalAlpha = 1;
 
-    if (foundAlready) {
-      ctx.rotate(-item.tilt);
+    if (item.found) {
+      ctx.rotate(-item.tiltBase);
       ctx.fillStyle = '#D7FF00';
       ctx.font = '600 10px ui-monospace, monospace';
       ctx.textAlign = 'center';
@@ -281,7 +503,6 @@ export function init(stageEl, hud) {
     bctx.fillStyle = water;
     bctx.fillRect(0, 0, w, h);
 
-    // light rays from the surface
     if (!prefersReducedMotion()) {
       bctx.save();
       bctx.globalCompositeOperation = 'lighter';
@@ -299,7 +520,6 @@ export function init(stageEl, hud) {
       bctx.restore();
     }
 
-    // seabed
     bctx.fillStyle = '#04121f';
     bctx.beginPath();
     bctx.moveTo(0, h);
@@ -310,15 +530,10 @@ export function init(stageEl, hud) {
     bctx.closePath();
     bctx.fill();
 
-    for (const item of state.items) {
-      // 0 at the edge of the beam, 1 directly under it. Once the
-      // round is over the whole scene is lit, so everything is
-      // drawn sharp - the last look at the objects should not be
-      // through the same murk that made them hard to find.
-      const d = Math.hypot(item.x - state.torch.x, item.y - state.torch.y);
-      const lit = state.done ? 1 : Math.max(0, Math.min(1, 1 - d / TORCH_R));
-      drawItem(bctx, item, lit, state.found.has(item.id));
-    }
+    for (const d of state.debris) drawDebris(bctx, d);
+    // Found objects last, so their acid marker is never hidden.
+    for (const item of state.items) if (!item.found) drawItem(bctx, item);
+    for (const item of state.items) if (item.found) drawItem(bctx, item);
 
     for (const b of state.bubbles) {
       bctx.globalAlpha = b.a;
@@ -328,17 +543,12 @@ export function init(stageEl, hud) {
     }
     bctx.globalAlpha = 1;
 
-    /* --- 2. punch the torch cone out of the buffer ---
-       destination-in keeps only the pixels under the gradient, so
-       everything outside the cone is genuinely erased rather than
-       covered by a dark overlay that a screenshot could defeat. */
+    /* --- 2. punch the torch cone out of the buffer --- */
 
     bctx.globalCompositeOperation = 'destination-in';
     const r = TORCH_R * (state.done ? 6 : 1);
     const torch = bctx.createRadialGradient(
-      state.torch.x, state.torch.y, 6,
-      state.torch.x, state.torch.y, r,
-    );
+      state.torch.x, state.torch.y, 6, state.torch.x, state.torch.y, r);
     torch.addColorStop(0, 'rgba(0,0,0,1)');
     torch.addColorStop(0.62, 'rgba(0,0,0,.92)');
     torch.addColorStop(1, 'rgba(0,0,0,0)');
@@ -346,14 +556,13 @@ export function init(stageEl, hud) {
     bctx.fillRect(0, 0, w, h);
     bctx.globalCompositeOperation = 'source-over';
 
-    /* --- 3. deep water floor, then the masked scene on top --- */
+    /* --- 3. deep water, then the masked scene on top --- */
 
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#030c16';
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(buffer, 0, 0, w, h);
 
-    // warm halo around the lamp itself
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const halo = ctx.createRadialGradient(
@@ -364,20 +573,53 @@ export function init(stageEl, hud) {
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
 
-    // found markers
-    let i = 0;
-    for (const item of ITEMS) {
-      const got = state.found.has(item.id);
-      ctx.fillStyle = got ? '#D7FF00' : '#1d3446';
-      ctx.fillRect(16 + i * 12, 16, 6, 6);
-      i += 1;
+    // A wrong tap gets a small ring, not a penalty.
+    if (state.nudge) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, state.nudge.life) * 0.5;
+      ctx.strokeStyle = '#bfe4ff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(state.nudge.x, state.nudge.y, (1 - state.nudge.life) * 26 + 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
   }
 
   const loop = new Loop((dt) => { update(dt); draw(); });
 
-  overlay.button.addEventListener('click', () => { sfx.click(); start(); });
-  overlay.show({ verdict: '', label: 'ПОГРУЖЕНИЕ', hint: 'ведите фонарём, найдите 3 предмета' });
+  /* ---------- input ----------
+     Click and tap collect. touchend rather than touchstart, so a
+     scroll gesture that happens to begin on the canvas is not
+     mistaken for a collection attempt. */
+
+  const localOf = (clientX, clientY) => {
+    const r = stageEl.getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  };
+
+  const onClick = (e) => {
+    if (!state.playing) return;
+    const p = localOf(e.clientX, e.clientY);
+    tap(p.x, p.y);
+  };
+
+  const onTouchEnd = (e) => {
+    if (!state.playing) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const p = localOf(t.clientX, t.clientY);
+    tap(p.x, p.y);
+  };
+
+  stageEl.addEventListener('click', onClick);
+  stageEl.addEventListener('touchend', onTouchEnd);
+
+  overlay.show({
+    verdict: '',
+    hint: `ведите фонарём, найдите ${TOTAL} предметов`,
+    buttons: [{ label: 'ПОГРУЖЕНИЕ', resumesPlay: true, onClick: () => { sfx.click(); start(); } }],
+  });
 
   reset();
   stage.resize();
@@ -399,6 +641,8 @@ export function init(stageEl, hud) {
       loop.stop();
       stopWatching();
       pointer.destroy();
+      stageEl.removeEventListener('click', onClick);
+      stageEl.removeEventListener('touchend', onTouchEnd);
       stage.destroy();
     },
   };

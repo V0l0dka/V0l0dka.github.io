@@ -1,10 +1,12 @@
 /* ============================================================
-   MISSION 01 - CATCH THE COAL
+   CATCH THE COAL
 
    A hookah stands in the middle of the stage. Coals fall. You move
    the tongs along the bottom and catch them.
 
-   10 caught wins. 3 missed loses. Coals get faster as you go.
+   50 caught reaches the pause screen, and from there the reader can
+   either carry on with the page or switch to endless mode. 3 missed
+   loses. Coals get faster as you go.
 
    The hookah is the real supplied photograph, cut out so it stands
    on the game's own black. Everything around it - coals, sparks,
@@ -18,8 +20,42 @@ import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
 import { asset } from '../media-config.js';
 
-const TARGET = 10;
+const TARGET = 50;
 const MAX_MISS = 3;
+
+/* ------------------------------------------------------------
+   DIFFICULTY
+
+   One row per band of the run. `speed` multiplies the fall rate,
+   `gap` is the seconds between spawns, `active` is how many coals
+   may be in the air at once.
+
+   The shape matters more than the numbers: the first ten are meant
+   to be comfortable. Fifty catches is a long sit, and a run that is
+   chaotic from the first coal is one nobody finishes.
+   ------------------------------------------------------------ */
+const BANDS = [
+  { upTo: 10, speed: 1.00, gap: 1.15, active: 1 },
+  { upTo: 20, speed: 1.18, gap: 1.00, active: 1 },
+  { upTo: 30, speed: 1.38, gap: 0.86, active: 2 },
+  { upTo: 40, speed: 1.60, gap: 0.72, active: 2 },
+  { upTo: 50, speed: 1.85, gap: 0.60, active: 3 },
+];
+
+/* Past fifty the ramp keeps going, but gently and with a floor, so
+   endless mode stays physically playable rather than turning into a
+   wall of coal. */
+function difficulty(caught) {
+  const band = BANDS.find((b) => caught < b.upTo);
+  if (band) return band;
+
+  const over = caught - 50;
+  return {
+    speed: Math.min(2.6, 1.85 + over * 0.012),
+    gap: Math.max(0.40, 0.60 - over * 0.004),
+    active: over > 40 ? 4 : 3,
+  };
+}
 
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
@@ -33,6 +69,8 @@ export function init(stageEl, hud) {
 
   const state = {
     playing: false,
+    endless: false,       // set once ЕЩЁ is chosen at fifty
+    record: 0,            // best of this session
     caught: 0,
     missed: 0,
     coals: [],
@@ -45,7 +83,10 @@ export function init(stageEl, hud) {
   };
 
   const paint = () => {
-    hud.textContent = `${String(state.caught).padStart(2, '0')} / ${TARGET}`;
+    // In endless mode there is no denominator to count towards.
+    hud.textContent = state.endless
+      ? String(state.caught).padStart(2, '0')
+      : `${String(state.caught).padStart(2, '0')} / ${TARGET}`;
     hud.classList.toggle('is-danger', state.missed >= MAX_MISS - 1);
   };
 
@@ -84,46 +125,110 @@ export function init(stageEl, hud) {
     paint();
   }
 
-  function start() {
+  function start({ endless = false } = {}) {
+    // Set the mode BEFORE reset(), because reset() repaints the HUD
+    // and the HUD reads state.endless to decide whether to print the
+    // "/ 50" denominator. The other order flashes "00 / 50" on the
+    // first frame of a run that has no target.
+    state.endless = endless;
     reset();
     state.playing = true;
     overlay.hide();
     loop.start();
-    announce('Игра началась. Ловите угли.');
+    announce(endless ? 'Бесконечный режим.' : 'Ловите угли.');
   }
 
-  function finish(won) {
+  /* Fifty reached. Play stops but the run is not over: the reader
+     chooses whether to move on or keep going. This is a pause, not
+     a result screen, so there is no reaction clip on it. */
+  function reachFifty() {
     state.playing = false;
-    won ? sfx.win() : sfx.lose();
+    state.record = Math.max(state.record, state.caught);
+    sfx.win();
 
     overlay.show({
-      verdict: won ? 'ПРОФЕССИОНАЛ' : 'УГОЛЬ ПОБЕДИЛ',
-      tone: won ? 'win' : 'lose',
-      label: 'ЕЩЁ РАЗ',
-      hint: won ? '' : `поймано ${state.caught} из ${TARGET}`,
-      moment: won ? 'coal-win' : 'coal-lose',
+      verdict: '50.',
+      tone: 'win',
+      hint: 'ТЫ ВООБЩЕ ЗАЧЕМ СТОЛЬКО УГЛЕЙ ПОЙМАЛА?',
+      buttons: [
+        { label: 'ПРОДОЛЖИТЬ', onClick: () => leave(true) },
+        { label: 'ЕЩЁ', ghost: true, resumesPlay: true, onClick: goEndless },
+      ],
     });
 
-    announce(won ? 'Профессионал' : 'Уголь победил');
+    announce('Пятьдесят. Продолжить или ещё?');
+  }
+
+  function goEndless() {
+    overlay.show({
+      verdict: 'ЛАДНО.',
+      hint: 'САМА ПОПРОСИЛА.',
+      buttons: [{ label: 'ПОЕХАЛИ', resumesPlay: true, onClick: () => start({ endless: true }) }],
+    });
+  }
+
+  /* Lost. In endless mode the session record is what matters; in the
+     ordinary run it is progress towards fifty. */
+  function lose() {
+    state.playing = false;
+    state.record = Math.max(state.record, state.caught);
+    sfx.lose();
+
+    overlay.show({
+      verdict: 'УГОЛЬ ПОБЕДИЛ.',
+      tone: 'lose',
+      hint: state.endless
+        ? `РЕКОРД: ${state.record}`
+        : `поймано ${state.caught} из ${TARGET}`,
+      moment: 'coal-lose',
+      buttons: [
+        { label: 'ЕЩЁ РАЗ', resumesPlay: true, onClick: () => start({ endless: state.endless }) },
+        { label: 'ХВАТИТ С МЕНЯ →', ghost: true, onClick: () => leave(false) },
+      ],
+    });
+
+    announce(`Уголь победил. Рекорд ${state.record}`);
+  }
+
+  /* Leave the game and let the page carry on with the story. The
+     stage stops capturing input, so scrolling behaves normally
+     again from this point. */
+  function leave(won) {
+    state.playing = false;
+    state.record = Math.max(state.record, state.caught);
+    loop.stop();
+
+    overlay.show({
+      verdict: '',
+      hint: state.record ? `РЕКОРД: ${state.record}` : '',
+      buttons: [{ label: 'СЫГРАТЬ ЕЩЁ', resumesPlay: true, onClick: () => start() }],
+      moment: won ? 'coal-win' : null,
+    });
+
     document.dispatchEvent(new CustomEvent('game:end', {
-      detail: { game: 'coal', won },
+      detail: { game: 'coal', won, caught: state.caught, record: state.record },
     }));
+
+    // `game:end` is the reporting event - other chapters listen to it
+    // to react to a result. `game:leave` is the navigation event, and
+    // it is what moves the reader to the next game. Both exits from
+    // this screen (ПРОДОЛЖИТЬ and ХВАТИТ С МЕНЯ) mean "carry on with
+    // the story", so both must fire it.
+    document.dispatchEvent(new CustomEvent('game:leave', { detail: { game: 'coal' } }));
   }
 
   /* ---------- simulation ---------- */
 
   function spawnCoal() {
     const { w } = stage.size;
-    // Speed climbs with score, so the last coals are genuinely
-    // harder than the first without ever becoming unreadable.
-    const difficulty = state.caught / TARGET;
+    const d = difficulty(state.caught);
     const margin = w * 0.12;
 
     state.coals.push({
       x: rand(margin, w - margin),
       y: -20,
       r: rand(9, 13),
-      vy: rand(120, 165) * (1 + difficulty * 0.85),
+      vy: rand(120, 165) * d.speed,
       spin: rand(-2, 2),
       angle: 0,
     });
@@ -143,10 +248,15 @@ export function init(stageEl, hud) {
 
     if (!state.playing) return;
 
+    // Spawn on a timer, but never exceed the band's allowance of
+    // coals in the air. That cap is what makes "occasionally two"
+    // mean occasionally two, rather than however many the timer
+    // happens to have produced.
+    const d = difficulty(state.caught);
     state.spawn -= dt;
-    if (state.spawn <= 0) {
+    if (state.spawn <= 0 && state.coals.length < d.active) {
       spawnCoal();
-      state.spawn = Math.max(0.42, 1.15 - (state.caught / TARGET) * 0.6);
+      state.spawn = d.gap;
     }
 
     state.glow = Math.max(0, state.glow - dt * 3);
@@ -166,7 +276,9 @@ export function init(stageEl, hud) {
         burst(c.x, c.y);
         sfx.catch();
         paint();
-        if (state.caught >= TARGET) return finish(true);
+        // Fifty is a pause in the ordinary run and means nothing at
+        // all once endless mode is on.
+        if (!state.endless && state.caught >= TARGET) return reachFifty();
         continue;
       }
 
@@ -175,7 +287,7 @@ export function init(stageEl, hud) {
         state.missed += 1;
         sfx.miss();
         paint();
-        if (state.missed >= MAX_MISS) return finish(false);
+        if (state.missed >= MAX_MISS) return lose();
       }
     }
 
@@ -339,8 +451,11 @@ export function init(stageEl, hud) {
 
   /* ---------- wiring ---------- */
 
-  overlay.button.addEventListener('click', () => { sfx.click(); start(); });
-  overlay.show({ verdict: '', label: 'НАЧАТЬ', hint: 'поймайте 10 углей' });
+  overlay.show({
+    verdict: '',
+    hint: `поймайте ${TARGET} углей`,
+    buttons: [{ label: 'НАЧАТЬ', resumesPlay: true, onClick: () => { sfx.click(); start(); } }],
+  });
 
   // Draw one idle frame so the stage is never an empty box.
   stage.resize();

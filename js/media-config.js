@@ -73,14 +73,21 @@ export const ASSETS = {
   keys: cutout(`${DIVING}/keys`, 'два ключа на кольце'),
   earring: cutout(`${DIVING}/earring`, 'золотые серьги-кольца'),
   present: cutout(`${GIFT}/present`, 'защитный панцирь Leatt - настоящий подарок'),
+
+  /* The main bike. Replaced with a higher-quality file under the
+     same name, so this entry is unchanged - but the build had to be
+     re-run for the new pixels to reach the site. Used both in the
+     showcase and as the rider in the Sur-Ron game. */
   surronSilhouette: cutout(`${SURRON}/silhouette`, 'Sur-Ron Light Bee X, вид сбоку'),
 
-  /* --- Sur-Ron stills (opaque) --- */
-  surron1: { kind: 'image', src: `${SURRON}/surron1.webp`, fallback: `${SURRON}/surron1.jpg` },
-  surron2: { kind: 'image', src: `${SURRON}/surron2.webp`, fallback: `${SURRON}/surron2.jpg` },
-  surron3: { kind: 'image', src: `${SURRON}/surron3.webp`, fallback: `${SURRON}/surron3.jpg` },
-  surron4: { kind: 'image', src: `${SURRON}/surron4.webp`, fallback: `${SURRON}/surron4.jpg` },
-  surron5: { kind: 'image', src: `${SURRON}/surron5.webp`, fallback: `${SURRON}/surron5.jpg` },
+  /* The campaign poster: multiple views plus printed specifications.
+     Opaque, so it is a jpg rather than a cut-out. */
+  surronShowcase: {
+    kind: 'image',
+    src: `${SURRON}/showcase.webp`,
+    fallback: `${SURRON}/showcase.jpg`,
+    note: 'постер Sur-Ron Light Bee X со спецификациями',
+  },
 };
 
 /* ------------------------------------------------------------

@@ -129,7 +129,9 @@ cutout() {
   local in="$1" name="$2" dir="$3" max="${4:-900}"
   [[ -f "$in" ]] || { echo "  MISSING $in"; return; }
   local vf="scale='min(iw,$max)':-2:flags=lanczos"
-  ffmpeg -y -loglevel error -i "$in" -vf "$vf" -c:v libwebp -quality 82 \
+  # -quality is silently ignored by this ffmpeg build for libwebp;
+  # -qscale:v is the one that works. 82 keeps the cut-out edges clean.
+  ffmpeg -y -loglevel error -i "$in" -vf "$vf" -c:v libwebp -qscale:v 82 \
          -compression_level 6 "$ext/$dir/$name.webp"
   ffmpeg -y -loglevel error -i "$in" -vf "$vf" "$ext/$dir/$name.png"
   echo "  $dir/$name"
@@ -142,20 +144,33 @@ cutout "$SRC/Revo.png"            revo      diving 420
 cutout "$SRC/keys.png"            keys      diving 420
 cutout "$SRC/earrings.png"        earring   diving 420
 cutout "$SRC/present.png"         present   gift   1200
-cutout "$SRC/sur-ron силуэт.png"  silhouette surron 900
+# The main bike was replaced with a higher-quality file under the
+# same name (990x600, up from 804x545). Kept at native width: it is
+# drawn large in the showcase, so downscaling it here would throw
+# away the quality that was just added.
+cutout "$SRC/sur-ron силуэт.png"  silhouette surron 990
 
-# --- Sur-Ron stills (opaque photographs) -----------------------
+# --- the campaign poster ---------------------------------------
+# Kept at its native 1024 px. It has specifications printed inside
+# it at small type, and scaling it down to "save weight" would make
+# those unreadable, which defeats the point of showing the poster.
 echo
-echo "sur-ron stills:"
-for n in 1 2 3 4 5; do
-  f="$SRC/sur-ron$n.jpg"
-  [[ -f "$f" ]] || { echo "  MISSING $f"; continue; }
-  ffmpeg -y -loglevel error -i "$f" -vf "scale='min(iw,900)':-2:flags=lanczos" \
-         -c:v libwebp -quality 80 "$ext/surron/surron$n.webp"
-  ffmpeg -y -loglevel error -i "$f" -vf "scale='min(iw,900)':-2:flags=lanczos" \
-         -q:v 4 "$ext/surron/surron$n.jpg"
-  echo "  surron/surron$n"
-done
+echo "poster:"
+if [[ -f "$SRC/sur-ron-showcase.jpg" ]]; then
+  ffmpeg -y -loglevel error -i "$SRC/sur-ron-showcase.jpg" \
+    -vf "scale='min(iw,1024)':-2:flags=lanczos" -c:v libwebp -qscale:v 72 \
+    "$ext/surron/showcase.webp"
+  ffmpeg -y -loglevel error -i "$SRC/sur-ron-showcase.jpg" \
+    -vf "scale='min(iw,1024)':-2:flags=lanczos" -q:v 4 \
+    "$ext/surron/showcase.jpg"
+  echo "  surron/showcase"
+else
+  echo "  MISSING $SRC/sur-ron-showcase.jpg"
+fi
+
+# NOTE: sur-ron1..5.jpg are no longer built. They existed only to
+# feed the configurator's РАКУРС switch, which was removed in
+# favour of the showcase. The originals are untouched in SRC.
 
 echo
 echo "external total: $(du -sh "$ext" | cut -f1)"

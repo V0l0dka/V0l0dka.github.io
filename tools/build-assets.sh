@@ -65,8 +65,11 @@ for f in "$SRC"/*.JPG "$SRC"/*.HEIC; do
 
   ffmpeg -y -loglevel error -i "$in" -frames:v 1 -update 1 -vf "$vf" \
          -q:v 4 "$photos/$base.jpg"
+  # NOTE: this ffmpeg build IGNORES -quality for libwebp - every value
+  # from 10 to 95 produced a byte-identical file. -qscale:v is the flag
+  # that actually controls it (higher = better).
   ffmpeg -y -loglevel error -i "$in" -frames:v 1 -update 1 -vf "$vf" \
-         -c:v libwebp -quality 78 "$photos/$base.webp"
+         -c:v libwebp -qscale:v 76 "$photos/$base.webp"
   echo "  photo  $base"
 done
 

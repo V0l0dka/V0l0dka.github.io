@@ -14,7 +14,7 @@ import { initAudioEngine } from './audio.js';
 import { buildArchive } from './archive.js';
 import { buildActivities } from './activities.js';
 import { buildStats } from './statistics.js';
-import { buildCustomization } from './customization.js';
+import { buildShowcase } from './showcase.js';
 import { initScroll } from './scroll.js';
 
 import { init as initCoal } from './games/coal-game.js';
@@ -27,7 +27,7 @@ function build() {
   buildArchive();
   buildActivities();
   buildStats();
-  buildCustomization();
+  buildShowcase();
   mountFinalPhoto();
   mountGames();
 
@@ -89,6 +89,24 @@ function mountGames() {
     if (game === 'diving' && won) {
       document.getElementById('game-diving')?.classList.add('is-surfaced');
     }
+  });
+
+  /* A game can ask to hand the reader back to the story - ХВАТИТ С
+     МЕНЯ after the coal, ВСПЛЫТЬ after the dive. The game does not
+     know what comes next; the page does. */
+  const NEXT_AFTER = {
+    coal: '#game-surron',
+    surron: '#game-diving',
+    diving: '#showcase',
+  };
+
+  document.addEventListener('game:leave', (e) => {
+    const target = document.querySelector(NEXT_AFTER[e.detail?.game] || '');
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
   });
 }
 

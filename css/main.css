@@ -953,3 +953,176 @@ img, video { max-width: 100%; display: block; }
 /* The intro owns the screen; nothing else shows through it. */
 body.is-locked .audio-toggle,
 body.is-locked .scroll-progress { opacity: 0; pointer-events: none; }
+
+/* ============================================================
+   07 - SUR-RON SHOWCASE
+
+   Replaced the configurator. A campaign, not a product card:
+   black, big type, one bike, one poster. Motion is scroll-driven
+   from js/scroll.js; nothing here animates on its own.
+   ============================================================ */
+
+.chapter--showcase { padding-top: calc(var(--stack) * 1.1); overflow: hidden; }
+
+.showcase__intro { margin-bottom: calc(var(--stack) * 0.6); }
+
+.showcase__wordmark { letter-spacing: -.03em; }
+
+.showcase__model {
+  font-family: var(--mono);
+  font-size: clamp(.8rem, 2.2vw, 1.05rem);
+  letter-spacing: .42em;
+  color: var(--acid);
+  margin: .75rem 0 0;
+}
+
+/* The bike. Sized by width so it stays large on a wide screen and
+   still fits a phone, and never cropped: this is the hero object
+   of the chapter. */
+.showcase__hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 62vh;
+  margin-bottom: var(--stack);
+}
+
+.showcase__hero img {
+  position: relative;
+  z-index: 1;
+  width: min(1000px, 92vw);
+  height: auto;
+  /* A cut-out with no background of its own needs a shadow, or it
+     floats in the black with nothing under it. */
+  filter: drop-shadow(0 40px 70px rgba(0, 0, 0, .9));
+}
+
+/* Controlled light under the bike, in the site's own accent. */
+.showcase__glow {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 58%;
+  width: min(900px, 86vw);
+  height: 46%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(50% 50% at 50% 50%,
+    rgba(215, 255, 0, .16), rgba(215, 255, 0, 0) 70%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+/* ---------- the three characteristics ----------------------- */
+
+.specs {
+  display: grid;
+  gap: clamp(3rem, 9vh, 7rem);
+  margin: 0 0 var(--stack);
+  max-width: 52rem;
+}
+
+.spec { margin: 0; }
+
+.spec__key {
+  font-family: var(--mono);
+  font-size: clamp(.7rem, 1.8vw, .85rem);
+  letter-spacing: .3em;
+  color: var(--grey);
+  margin: 0 0 .6rem;
+}
+
+.spec__val {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 6vw, 4.5rem);
+  line-height: 1.05;
+  margin: 0;
+  color: var(--off-white);
+}
+
+/* The third one is the joke and the hinge of the whole chapter,
+   so it is the only one that gets the accent and the extra size. */
+.spec--loud .spec__key { color: var(--acid); }
+
+.spec--loud .spec__val {
+  font-size: clamp(2.2rem, 8vw, 6.5rem);
+  color: var(--acid);
+}
+
+/* ---------- the campaign poster ------------------------------
+   Given a whole screen. It carries printed specifications, so it
+   is never cropped and never scaled below what stays readable -
+   on a phone it simply gets a taller section to sit in. */
+
+.poster {
+  position: relative;
+  margin: 0 auto var(--stack);
+  width: min(560px, 88vw);
+  overflow: hidden;
+  border: 1px solid #1a1a1a;
+}
+
+.poster img { width: 100%; height: auto; display: block; }
+
+.poster__sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg,
+    transparent 36%, rgba(255, 255, 255, .13) 50%, transparent 64%);
+  background-size: 300% 100%;
+  background-position: 150% 0;
+}
+
+.poster.is-lit .poster__sweep {
+  animation: poster-sweep 1700ms var(--ease) 250ms 1 both;
+}
+
+@keyframes poster-sweep {
+  from { background-position: 150% 0; }
+  to   { background-position: -50% 0; }
+}
+
+/* ---------- the 60+ callback --------------------------------
+   A deliberate repeat of the statistic from chapter 05. The
+   original is untouched and still lives up there. */
+
+.callback {
+  min-height: 72vh;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+}
+
+.callback__num {
+  font-family: var(--serif);
+  font-size: clamp(5rem, 22vw, 16rem);
+  line-height: .82;
+  letter-spacing: -.03em;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.callback__label {
+  font-family: var(--grotesk);
+  font-size: clamp(1rem, 3vw, 2rem);
+  letter-spacing: .2em;
+  margin: .5rem 0 0;
+}
+
+.showcase__turn {
+  min-height: 60vh;
+  display: grid;
+  align-content: center;
+  gap: .4rem;
+  max-width: 40rem;
+}
+
+/* ---------- gift: the fine print ---------------------------- */
+
+.gift__fineprint {
+  font-family: var(--mono);
+  font-size: .75rem;
+  letter-spacing: .18em;
+  color: var(--grey);
+  margin: 0;
+}

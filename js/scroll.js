@@ -46,6 +46,7 @@ export function initScroll() {
   outroLines(gsap);
   activityMotion(gsap);
   statsEntrance(gsap);
+  showcase(gsap);
   scrollProgress();
 
   // Late-loading images change the page height; without this the
@@ -195,6 +196,83 @@ function statsEntrance(gsap) {
       duration: 1,
       ease: 'power3.out',
       scrollTrigger: { trigger: stat, start: 'top 80%', once: true },
+    });
+  }
+}
+
+/* ---------- 07 Sur-Ron showcase ------------------------------
+   Campaign pacing: the bike drifts and scales slowly behind the
+   type, each characteristic arrives on its own, the poster opens
+   with a mask, and the 60+ callback lands hard.
+
+   Deliberately restrained. This chapter is meant to feel expensive,
+   and nothing reads as cheap faster than five things moving at once.
+   ------------------------------------------------------------ */
+
+function showcase(gsap) {
+  const section = $('#showcase');
+  if (!section) return;
+
+  // Hero: slow rise and scale as it passes. Transform only, so it
+  // never triggers layout.
+  const hero = $('[data-showcase-hero] img', section);
+  if (hero) {
+    gsap.fromTo(hero,
+      { yPercent: 8, scale: 0.94 },
+      {
+        yPercent: -8, scale: 1.04, ease: 'none',
+        scrollTrigger: {
+          trigger: '[data-showcase-hero]', start: 'top bottom',
+          end: 'bottom top', scrub: 0.8,
+        },
+      });
+  }
+
+  const glow = $('.showcase__glow', section);
+  if (glow) {
+    gsap.fromTo(glow, { opacity: 0.25 }, {
+      opacity: 1, ease: 'none',
+      scrollTrigger: {
+        trigger: '[data-showcase-hero]', start: 'top 70%', end: 'center center', scrub: true,
+      },
+    });
+  }
+
+  // Characteristics: one at a time, each with its own trigger.
+  for (const spec of $$('[data-spec]', section)) {
+    gsap.from(spec, {
+      opacity: 0, y: 44, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: spec, start: 'top 82%', once: true },
+    });
+  }
+
+  /* Poster: irises open and drifts. `is-lit` fires the one-shot
+     light sweep in CSS. It is the payoff of the chapter, so it gets
+     a longer, slower move than anything around it. */
+  const poster = $('[data-poster]', section);
+  if (poster) {
+    gsap.fromTo(poster,
+      { clipPath: 'inset(12% 12% 12% 12%)', scale: 0.94, opacity: 0.55 },
+      {
+        clipPath: 'inset(0% 0% 0% 0%)', scale: 1, opacity: 1, ease: 'power2.out',
+        scrollTrigger: { trigger: poster, start: 'top 88%', end: 'center 62%', scrub: 0.7 },
+      });
+
+    window.ScrollTrigger.create({
+      trigger: poster,
+      start: 'top 62%',
+      once: true,
+      onEnter: () => poster.classList.add('is-lit'),
+    });
+  }
+
+  // The callback number counts up again, exactly as it did in the
+  // statistics chapter - the repetition is the point.
+  const num = $('.callback__num', section);
+  if (num) {
+    gsap.from('[data-callback]', {
+      opacity: 0, y: 60, duration: 1, ease: 'power3.out',
+      scrollTrigger: { trigger: '[data-callback]', start: 'top 78%', once: true },
     });
   }
 }

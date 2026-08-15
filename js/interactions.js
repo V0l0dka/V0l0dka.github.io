@@ -202,19 +202,22 @@ export function initGift() {
     if (!entry.isIntersecting) return;
     io.disconnect();
 
-    await beat(700);
+    await beat(900);
     mountMoment(slot, 'gift-intro');       // TMNT enters
 
-    await beat(1500);
-    tag.hidden = false;                    // ЛЕГЕНДАРНЫЙ ПРЕДМЕТ
-    announce('Легендарный предмет');
+    await beat(1600);
+    tag.hidden = false;                    // эволюция придумала это...
+    announce('Эволюция придумала это несколько миллионов лет назад');
 
-    await beat(800);
+    await beat(1400);
     swapMoment(slot, 'gift-hype');         // second TMNT beat
     panel.classList.add('is-armed');
 
+    await beat(900);
+    armorClass.hidden = false;             // думаю, нам тоже подойдёт
+    announce('Думаю, нам тоже подойдёт');
+
     await beat(700);
-    armorClass.hidden = false;
     equip.hidden = false;
   }, { threshold: 0.35 });
 
@@ -244,15 +247,18 @@ export function initGift() {
     armorClass.hidden = true;
     $('[data-gift-setup]').hidden = true;
 
-    // 8. Stats, only after the photograph has had the screen alone.
-    await beat(1400);
+    // The photograph gets the screen to itself first. Only then is
+    // it named, and only then is it scored.
+    await beat(1600);
+    word.hidden = false;
+    announce('Твой панцирь');
+
+    await beat(1100);
     stats.hidden = false;
     announce('Плюс сто к защите, плюс пятьдесят к стилю');
 
-    // 9.
-    await beat(1200);
-    word.hidden = false;
-    announce('Подарок для тебя');
+    await beat(1300);
+    $('[data-gift-fine]').hidden = false;
 
     // 11. The last TMNT beat lands here - after the gift, and well
     // before the final message. The quiet ending stays quiet.

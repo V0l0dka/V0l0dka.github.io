@@ -162,118 +162,49 @@
 .game__result--win  { color: var(--black); background: var(--acid); }
 .game__result--lose { color: var(--off-white); background: #1a1a1a; }
 
-/* ---------- 07 configurator -------------------------------- */
+/* ---------- narrative links between the games ---------------
+   The chapter reads as one continuous run rather than a menu of
+   MISSION 01/02/03, so each game is separated by a line of story
+   instead of a numbered heading. */
 
-.config {
+.games__link {
   display: grid;
-  grid-template-columns: 1fr 18rem;
-  gap: var(--gutter);
-  align-items: center;
+  gap: .4rem;
+  min-height: 52vh;
+  align-content: center;
+  margin: var(--stack) 0;
 }
 
-.config__stage {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border: 1px solid #1e1e1e;
+/* ---------- multi-line HUD (diving) -------------------------- */
+
+.game__hud--list {
   display: grid;
-  place-items: center;
-  background: radial-gradient(60% 60% at 50% 60%, #141414, #070707);
+  gap: .3rem;
+  align-items: start;
 }
 
-/* The bike itself. object-fit keeps every one of the five stills in
-   proportion regardless of its own aspect ratio. */
-.config__bike {
-  position: relative;
-  z-index: 2;
-  width: 88%;
-  height: 88%;
-  object-fit: contain;
-  transition: opacity 300ms var(--ease);
+.hud__row {
+  display: grid;
+  grid-template-columns: 5.5rem auto;
+  align-items: baseline;
+  gap: .6rem;
 }
 
-/* Headlight. A cone of light from the front of the bike, off by
-   default. These are rendered effects over a real photograph, not
-   fake parts pretending to be swappable hardware. */
-.config__beam {
-  position: absolute;
-  z-index: 3;
-  left: 8%;
-  top: 42%;
-  width: 46%;
-  height: 34%;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 420ms var(--ease);
-  background: radial-gradient(closest-side at 12% 50%,
-    rgba(255, 240, 200, .55), rgba(255, 240, 200, 0) 78%);
-  clip-path: polygon(0 42%, 0 58%, 100% 100%, 100% 0);
+.hud__value--sm { font-size: clamp(.85rem, 2vw, 1.05rem); }
+
+.hud__row--total {
+  margin-top: .35rem;
+  padding-top: .35rem;
+  border-top: 1px solid #1e2c38;
 }
 
-.config__beam[data-mode="warm"] { opacity: .85; }
-.config__beam[data-mode="acid"] {
-  opacity: .9;
-  background: radial-gradient(closest-side at 12% 50%,
-    rgba(215, 255, 0, .5), rgba(215, 255, 0, 0) 78%);
-}
+/* ---------- overlay actions ---------------------------------
+   Some screens offer a choice (ПРОДОЛЖИТЬ / ЕЩЁ), so the buttons
+   sit in a row that wraps rather than being a single element. */
 
-/* Underglow pooling on the floor beneath the bike. */
-.config__under {
-  position: absolute;
-  z-index: 1;
-  left: 12%;
-  right: 12%;
-  bottom: 12%;
-  height: 22%;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 420ms var(--ease);
-  background: radial-gradient(50% 60% at 50% 100%,
-    rgba(215, 255, 0, .38), rgba(215, 255, 0, 0) 70%);
-  filter: blur(6px);
-}
-
-.config__under[data-mode="acid"] { opacity: 1; }
-
-.config__caption {
-  position: absolute;
-  z-index: 4;
-  left: 1rem;
-  bottom: .75rem;
-  margin: 0;
-  font-family: var(--mono);
-  font-size: .68rem;
-  letter-spacing: .22em;
-  color: var(--grey);
-}
-
-.config__ui { display: grid; gap: 1.75rem; align-content: start; }
-
-.config__group { display: grid; gap: .6rem; }
-
-.config__name {
-  font-family: var(--mono);
-  font-size: .68rem;
-  letter-spacing: .26em;
-  color: var(--grey);
-}
-
-.config__options { display: flex; flex-wrap: wrap; gap: .4rem; }
-
-.config__opt {
-  font-family: var(--mono);
-  font-size: .7rem;
-  letter-spacing: .12em;
-  padding: .5rem .85rem;
-  border: 1px solid #242424;
-  background: transparent;
-  color: var(--grey);
-  cursor: pointer;
-  transition: color 200ms var(--ease), border-color 200ms var(--ease);
-}
-
-.config__opt:hover { color: var(--off-white); border-color: var(--grey); }
-
-.config__opt[aria-pressed="true"] {
-  color: var(--acid);
-  border-color: var(--acid);
+.game__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  justify-content: center;
 }

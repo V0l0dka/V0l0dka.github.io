@@ -165,38 +165,37 @@ export function createOverlay(stageEl, { startLabel = 'НАЧАТЬ' } = {}) {
   const reaction = document.createElement('div');
   reaction.className = 'game__reaction';
 
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'btn btn--acid game__btn';
-  button.textContent = startLabel;
+  // Buttons are rebuilt on every show(), because a screen may need
+  // one (НАЧАТЬ), or two (ПРОДОЛЖИТЬ / ЕЩЁ at fifty coals).
+  const actions = document.createElement('div');
+  actions.className = 'game__actions';
 
   const hint = document.createElement('p');
   hint.className = 'game__hint';
 
   const wrap = document.createElement('div');
   wrap.className = 'game__overlay';
-  wrap.append(title, reaction, button, hint);
+  wrap.append(title, reaction, actions, hint);
   stageEl.append(wrap);
 
-  /* Pressing start always brings the whole stage into view first.
-     The button can be clicked while the stage is only half on
-     screen, which would begin a run with the playfield cut off -
+  /* Pressing a button that starts play always brings the whole stage
+     into view first. It can be clicked while the stage is only half
+     on screen, which would begin a run with the playfield cut off -
      and the catcher lives at the very bottom of it.
 
      The target is computed rather than delegated to
-     scrollIntoView({block:'center'}), which lands inconsistently
-     on this page: it competes with the CSS smooth-scroll and with
+     scrollIntoView({block:'center'}), which lands inconsistently on
+     this page: it competes with the CSS smooth-scroll and with
      ScrollTrigger's pinned section further up. Plain arithmetic
-     cannot be argued with. Registered here so it runs before the
-     game's own start handler. */
-  button.addEventListener('click', () => {
+     cannot be argued with. */
+  function centreStage() {
     const r = stageEl.getBoundingClientRect();
     const room = Math.max(12, (window.innerHeight - r.height) / 2);
     window.scrollTo({
       top: Math.max(0, window.scrollY + r.top - room),
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     });
-  });
+  }
 
   /* The overlay being hidden IS the definition of "a run is in
      progress", so it owns the stage's playing class too. That
@@ -204,19 +203,39 @@ export function createOverlay(stageEl, { startLabel = 'НАЧАТЬ' } = {}) {
      sync with the actual game state. */
   return {
     node: wrap,
-    button,
+
     /* `moment` names a placement slot in js/media-config.js. It is
        swapped rather than appended, so the losing reaction never
-       stacks under the winning one on a replay. */
-    show({ verdict = '', label = startLabel, tone = '', hint: hintText = '', moment = null } = {}) {
+       stacks under the winning one on a replay.
+
+       `buttons` is [{ label, onClick, ghost, resumesPlay }]. A button
+       with resumesPlay centres the stage before its handler runs. */
+    show({
+      verdict = '', tone = '', hint: hintText = '', moment = null,
+      buttons = [{ label: startLabel, resumesPlay: true }],
+    } = {}) {
       title.textContent = verdict;
       title.className = `game__verdict${tone ? ` game__verdict--${tone}` : ''}`;
-      button.textContent = label;
       hint.textContent = hintText;
       swapMoment(reaction, moment);
+
+      actions.replaceChildren();
+      for (const spec of buttons) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `btn ${spec.ghost ? 'btn--ghost' : 'btn--acid'} game__btn`;
+        b.textContent = spec.label;
+        b.addEventListener('click', () => {
+          if (spec.resumesPlay) centreStage();
+          spec.onClick?.();
+        });
+        actions.append(b);
+      }
+
       wrap.hidden = false;
       stageEl.classList.remove('is-playing');
     },
+
     hide() {
       wrap.hidden = true;
       stageEl.classList.add('is-playing');

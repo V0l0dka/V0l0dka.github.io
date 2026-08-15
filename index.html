@@ -149,24 +149,28 @@
      or captures input just because you scrolled past it.
      ============================================================ -->
 <section class="chapter chapter--games" id="games" aria-label="Мини-игры">
+  <!-- Picks up directly from 554+ КАЛЬЯНОВ in the statistics. -->
   <div class="games__lead">
-    <p class="lead-line" data-lead-line>ДОСТАТОЧНО СТАТИСТИКИ.</p>
-    <p class="lead-line" data-lead-line>ПРОВЕРИМ НА ПРАКТИКЕ.</p>
+    <p class="lead-line" data-lead-line>КСТАТИ ОБ УГЛЯХ...</p>
   </div>
 
   <article class="game" id="game-coal" data-game="coal">
-    <p class="kicker">ЗАДАНИЕ 01</p>
     <h3 class="display display--m">ЛОВИ УГОЛЬ</h3>
     <div class="game__stage" data-game-stage="coal">
       <div class="game__hud">
         <span class="hud__label">УГЛИ</span>
-        <span class="hud__value" data-hud="coal">00 / 10</span>
+        <span class="hud__value" data-hud="coal">00 / 50</span>
       </div>
     </div>
   </article>
 
+  <!-- between the coal and the bike -->
+  <div class="games__link">
+    <p class="lead-line" data-lead-line>ЛАДНО.</p>
+    <p class="lead-line" data-lead-line>С ЭТИМ СПРАВИЛАСЬ.</p>
+  </div>
+
   <article class="game" id="game-surron" data-game="surron">
-    <p class="kicker">ЗАДАНИЕ 02</p>
     <h3 class="display display--m">НЕ РАЗБЕЙСЯ</h3>
     <div class="game__stage" data-game-stage="surron">
       <div class="game__hud">
@@ -176,13 +180,21 @@
     </div>
   </article>
 
+  <!-- between the bike and the water -->
+  <div class="games__link">
+    <p class="lead-line" data-lead-line>А ТЕПЕРЬ ТУДА,</p>
+    <p class="lead-line" data-lead-line>КУДА БАЙК ПОКА НЕ УМЕЕТ.</p>
+  </div>
+
   <article class="game game--deep" id="game-diving" data-game="diving">
-    <p class="kicker">ЗАДАНИЕ 03</p>
     <h3 class="display display--m">ГЛУБЖЕ</h3>
     <div class="game__stage" data-game-stage="diving">
-      <div class="game__hud">
-        <span class="hud__label">НАЙДЕНО</span>
-        <span class="hud__value" data-hud="diving">0 / 3</span>
+      <!-- Per-category tally. Each line updates independently. -->
+      <div class="game__hud game__hud--list">
+        <span class="hud__row"><span class="hud__label">СЕРЁЖКИ</span><span class="hud__value hud__value--sm" data-hud-cat="earring">0 / 5</span></span>
+        <span class="hud__row"><span class="hud__label">REVO</span><span class="hud__value hud__value--sm" data-hud-cat="revo">0 / 5</span></span>
+        <span class="hud__row"><span class="hud__label">КЛЮЧИ</span><span class="hud__value hud__value--sm" data-hud-cat="keys">0 / 5</span></span>
+        <span class="hud__row hud__row--total"><span class="hud__label">ВСЕГО</span><span class="hud__value" data-hud="diving">0 / 15</span></span>
       </div>
     </div>
   </article>
@@ -190,22 +202,68 @@
 
 
 <!-- ============================================================
-     CHAPTER 07 - SUR-RON
-     Three controls that each change the real photograph: which of
-     the five stills is shown, the headlight, and the underglow.
-     Built by js/customization.js.
+     CHAPTER 07 - SUR-RON SHOWCASE
+
+     A campaign, not a configurator. The bike is introduced, three
+     characteristics land one at a time, the poster pays it off,
+     and then the last characteristic turns into the reason the
+     next chapter exists.
+
+     Scroll behaviour is wired in js/scroll.js (showcase()).
      ============================================================ -->
-<section class="chapter chapter--config" id="config" aria-label="Кастомизация Sur-Ron">
-  <header class="config__intro">
+<section class="chapter chapter--showcase" id="showcase" aria-label="Sur-Ron Light Bee X">
+
+  <header class="showcase__intro">
     <p class="kicker">ГЛАВА 07</p>
-    <h2 class="display display--l">LIGHT BEE X</h2>
+    <h2 class="display display--l showcase__wordmark">SUR-RON</h2>
+    <p class="showcase__model">LIGHT BEE X</p>
   </header>
 
-  <div class="config">
-    <div class="config__stage" data-config-stage>
-      <p class="config__placeholder">SUR-RON LIGHT BEE X - ЧЁРНЫЙ</p>
+  <!-- the bike itself, pinned and drifting behind the type -->
+  <div class="showcase__hero" data-showcase-hero>
+    <div class="showcase__glow" aria-hidden="true"></div>
+    <picture>
+      <source data-hero-webp type="image/webp">
+      <img data-hero-img alt="Sur-Ron Light Bee X" decoding="async" loading="lazy">
+    </picture>
+  </div>
+
+  <!-- three characteristics, revealed one at a time -->
+  <dl class="specs">
+    <div class="spec" data-spec>
+      <dt class="spec__key">СКОРОСТЬ</dt>
+      <dd class="spec__val">ДОСТАТОЧНО</dd>
     </div>
-    <div class="config__ui" data-config-ui></div>
+    <div class="spec" data-spec>
+      <dt class="spec__key">ВЕС</dt>
+      <dd class="spec__val">ДОСТАТОЧНО МАЛО</dd>
+    </div>
+    <!-- the one the chapter is actually about -->
+    <div class="spec spec--loud" data-spec>
+      <dt class="spec__key">ВЕРОЯТНОСТЬ НАЕБНУТЬСЯ</dt>
+      <dd class="spec__val">ДОСТАТОЧНО ВЫСОКАЯ</dd>
+    </div>
+  </dl>
+
+  <!-- the campaign poster: the payoff, given a whole screen -->
+  <figure class="poster" data-poster>
+    <picture>
+      <source data-poster-webp type="image/webp">
+      <img data-poster-img alt="Sur-Ron Light Bee X - постер" decoding="async" loading="lazy">
+    </picture>
+    <div class="poster__sweep" aria-hidden="true"></div>
+  </figure>
+
+  <!-- callback to the statistics chapter. The original 60+ stays
+       exactly where it was; this is a deliberate repeat. -->
+  <div class="callback" data-callback>
+    <p class="callback__num">60<span class="stat__plus">+</span></p>
+    <p class="callback__label">ТРАВМ</p>
+  </div>
+
+  <div class="showcase__turn" data-showcase-turn>
+    <p class="outro__line" data-outro-line>И ВОТ С ПОСЛЕДНИМ ПУНКТОМ</p>
+    <p class="outro__line" data-outro-line>НАДО ЧТО-ТО ДЕЛАТЬ.</p>
   </div>
 </section>
 
@@ -222,22 +280,23 @@
 <section class="chapter chapter--gift" id="gift" aria-label="Подарок">
   <div class="gift" data-gift>
 
-    <!-- 1. the setup -->
-    <p class="gift__setup" data-gift-setup>КОЕ-ЧЕГО ВСЁ-ТАКИ НЕ ХВАТАЕТ.</p>
+    <!-- 1. black, a pause, then the idea. Follows straight on from
+         "И ВОТ С ПОСЛЕДНИМ ПУНКТОМ НАДО ЧТО-ТО ДЕЛАТЬ." -->
+    <p class="gift__setup" data-gift-setup>ЕСТЬ ОДНА ИДЕЯ.</p>
 
-    <!-- 2 + 4. TMNT enters, comic framing -->
+    <!-- 2. TMNT enters, comic framing -->
     <div class="gift__panel" data-gift-panel aria-hidden="true">
       <div class="gift__rays"></div>
       <div class="gift__slot" data-gift-slot></div>
       <div class="gift__halftone"></div>
     </div>
 
-    <!-- 3. -->
-    <p class="gift__tag" data-gift-tag hidden>ЛЕГЕНДАРНЫЙ ПРЕДМЕТ</p>
-    <p class="gift__class" data-gift-class hidden>КЛАСС ЗАЩИТЫ: <b>ЧЕРЕПАХА</b></p>
+    <!-- 3. the actual argument for the gift -->
+    <p class="gift__tag" data-gift-tag hidden>ЭВОЛЮЦИЯ ПРИДУМАЛА ЭТО<br>НЕСКОЛЬКО МИЛЛИОНОВ ЛЕТ НАЗАД.</p>
+    <p class="gift__class" data-gift-class hidden>ДУМАЮ,<br>НАМ ТОЖЕ ПОДОЙДЁТ.</p>
 
-    <!-- 5. -->
-    <button class="btn btn--acid gift__equip" data-gift-equip hidden>ЭКИПИРОВАТЬ</button>
+    <!-- 4. -->
+    <button class="btn btn--acid gift__equip" data-gift-equip hidden>ПОКАЗАТЬ →</button>
 
     <!-- 6 + 7. the real thing. Tilt is applied to the inner element
          so the reveal animation and the tilt never fight over the
@@ -253,15 +312,16 @@
       </div>
     </figure>
 
-    <!-- 8. -->
+    <!-- 8. the name of the thing, then what it is worth -->
+    <p class="gift__word" data-gift-word hidden>ТВОЙ ПАНЦИРЬ.</p>
+
     <ul class="gift__stats" data-gift-stats hidden>
       <li>+100 К ЗАЩИТЕ</li>
       <li>+50 К СТИЛЮ</li>
-      <li>+∞ К ЕБАНУТОСТИ</li>
+      <li>−? К ТРАВМАМ</li>
     </ul>
 
-    <!-- 9. -->
-    <p class="gift__word" data-gift-word hidden>ПОДАРОК ДЛЯ ТЕБЯ.</p>
+    <p class="gift__fineprint" data-gift-fine hidden>ЭТО УЖЕ ЗАВИСИТ ОТ ТЕБЯ.</p>
 
     <!-- 11. last laugh, before the quiet chapters -->
     <div class="gift__outro" data-gift-outro></div>

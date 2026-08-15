@@ -100,13 +100,29 @@ export const REVEAL_2026 = photo('2026');
    ------------------------------------------------------------ */
 export const ACTIVITIES = [
   { id: 'photoshoot', label: 'ФОТОСЕССИЯ', media: photo('img_0831'), kind: 'photo' },
-  { id: 'travel', label: 'ПУТЕШЕСТВИЯ', media: photo('img_0353'), kind: 'photo' },
-  { id: 'water', label: 'ВЕЙКБОРД', media: photo('img_8752'), kind: 'photo' },
-  { id: 'diving', label: 'ДАЙВИНГ', media: photo('img_8746'), kind: 'photo' },
+
+  // New photograph. The previous travel shot (img_0353) is no longer
+  // shown in this chapter; the file stays in assets/photos.
+  { id: 'travel', label: 'ПУТЕШЕСТВИЯ', media: photo('trips'), kind: 'photo' },
+
+  // Same photograph as before, relabelled: it was ВЕЙКБОРД and is
+  // now ДАЙВИНГ. The picture itself is untouched.
+  { id: 'diving', label: 'ДАЙВИНГ', media: photo('img_8752'), kind: 'photo' },
+
+  // The beach shot that used to carry the ДАЙВИНГ label. It is two
+  // blokes on a beach, so it gets the label it deserves.
+  { id: 'muzhlany', label: 'МУЖЛАНЫ', media: photo('img_8746'), kind: 'photo' },
+
   { id: 'surron', label: 'SUR-RON', media: photo('img_8660'), kind: 'photo' },
   { id: 'hookah', label: 'КАЛЬЯН', media: video('img_0572'), kind: 'video' },
   { id: 'metan', label: 'METAN', media: video('img_1433'), kind: 'video' },
-  { id: 'snow', label: 'СНОУБОРД', media: video('img_8672'), kind: 'video' },
+
+  // New photograph takes the snowboard slot...
+  { id: 'snow', label: 'СНОУБОРД', media: photo('snowboard'), kind: 'photo' },
+
+  // ...and the clip that used to be here keeps its place in the
+  // montage, immediately after, under a more honest label.
+  { id: 'violence', label: 'НАСИЛИЕ', media: video('img_8672'), kind: 'video' },
 ];
 
 /* Smoke exhale. Used as the visual bridge from HOOKAH into the

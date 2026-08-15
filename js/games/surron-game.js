@@ -1,5 +1,5 @@
 /* ============================================================
-   MISSION 02 - DON'T CRASH
+   DON'T CRASH
 
    Side-scrolling endurance run. The bike moves by itself, you
    only jump. Survive ~40 seconds.
@@ -94,9 +94,14 @@ export function init(stageEl, hud) {
     overlay.show({
       verdict: won ? 'ну нормально' : 'зато красиво',
       tone: won ? 'win' : 'lose',
-      label: 'ЕЩЁ РАЗ',
       hint: won ? '' : `${state.t.toFixed(1)} с из ${SURVIVE}`,
       moment: won ? 'surron-win' : 'surron-lose',
+      buttons: [
+        { label: 'ЕЩЁ РАЗ', resumesPlay: true, onClick: start },
+        { label: 'ДАЛЬШЕ →', ghost: true, onClick: () => {
+          document.dispatchEvent(new CustomEvent('game:leave', { detail: { game: 'surron' } }));
+        } },
+      ],
     });
 
     announce(won ? 'ну нормально' : 'зато красиво');
@@ -425,8 +430,11 @@ export function init(stageEl, hud) {
   stageEl.addEventListener('mousedown', onPointerDown);
   stageEl.addEventListener('touchstart', onPointerDown, { passive: false });
 
-  overlay.button.addEventListener('click', () => { sfx.click(); start(); });
-  overlay.show({ verdict: '', label: 'НАЧАТЬ', hint: 'пробел или тап - прыжок' });
+  overlay.show({
+    verdict: '',
+    hint: 'пробел или тап - прыжок',
+    buttons: [{ label: 'НАЧАТЬ', resumesPlay: true, onClick: () => { sfx.click(); start(); } }],
+  });
 
   reset();
   stage.resize();
