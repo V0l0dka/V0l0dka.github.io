@@ -6,15 +6,17 @@
 
    10 caught wins. 3 missed loses. Coals get faster as you go.
 
-   Drawn rather than composited from images: the whole thing is
-   two rectangles, an ellipse and a glow, which keeps it in the
-   site's flat editorial language instead of looking like a
-   cartoon dropped into the page.
+   The hookah is the real supplied photograph, cut out so it stands
+   on the game's own black. Everything around it - coals, sparks,
+   smoke - stays procedural, which keeps the scene in the site's
+   flat editorial language and means the only asset to load is one
+   20 KB WebP.
    ============================================================ */
 
-import { createStage, Loop, createPointer, createOverlay, autoPause, rand } from './engine.js';
+import { createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
+import { asset } from '../media-config.js';
 
 const TARGET = 10;
 const MAX_MISS = 3;
@@ -24,15 +26,22 @@ export function init(stageEl, hud) {
   const overlay = createOverlay(stageEl, { startLabel: 'НАЧАТЬ' });
   const pointer = createPointer(stageEl, () => state.playing);
 
+  // The real hookah photograph, cut out with a transparent
+  // background so it stands on the game's own backdrop. Drawing
+  // starts before it arrives and simply skips it until ready.
+  const hookah = loadSprite(asset('hookah'), stageEl);
+
   const state = {
     playing: false,
     caught: 0,
     missed: 0,
     coals: [],
     sparks: [],
+    smoke: [],
     spawn: 0,
     tongsX: 0,
     glow: 0,
+    t: 0,
   };
 
   const paint = () => {
@@ -44,10 +53,19 @@ export function init(stageEl, hud) {
 
   const layout = () => {
     const { w, h } = stage.size;
+    // The hookah is drawn from its own aspect ratio so it is never
+    // stretched, and sized off the stage height so it stays in
+    // proportion on a phone as well as a desktop.
+    const hookahH = h * 0.62;
+    const ratio = hookah.ready ? hookah.img.width / hookah.img.height : 525 / 752;
+    const hookahW = hookahH * ratio;
+
     return {
       floorY: h * 0.88,
       hookahX: w / 2,
-      hookahTop: h * 0.34,
+      hookahW,
+      hookahH,
+      hookahTopY: h * 0.88 - hookahH,     // where the coal bowl sits
       tongsW: Math.max(64, w * 0.12),
       tongsH: 10,
     };
@@ -60,6 +78,7 @@ export function init(stageEl, hud) {
     state.missed = 0;
     state.coals = [];
     state.sparks = [];
+    state.smoke = [];
     state.spawn = 0;
     state.glow = 0;
     paint();
@@ -78,13 +97,14 @@ export function init(stageEl, hud) {
     won ? sfx.win() : sfx.lose();
 
     overlay.show({
-      verdict: won ? 'PROFESSIONAL' : 'УГОЛЬ ПОБЕДИЛ',
+      verdict: won ? 'ПРОФЕССИОНАЛ' : 'УГОЛЬ ПОБЕДИЛ',
       tone: won ? 'win' : 'lose',
       label: 'ЕЩЁ РАЗ',
       hint: won ? '' : `поймано ${state.caught} из ${TARGET}`,
+      moment: won ? 'coal-win' : 'coal-lose',
     });
 
-    announce(won ? 'PROFESSIONAL' : 'Уголь победил');
+    announce(won ? 'Профессионал' : 'Уголь победил');
     document.dispatchEvent(new CustomEvent('game:end', {
       detail: { game: 'coal', won },
     }));
@@ -112,6 +132,9 @@ export function init(stageEl, hud) {
   function update(dt) {
     const { w, h } = stage.size;
     const L = layout();
+
+    state.t += dt;
+    updateSmoke(dt, L);
 
     // Tongs follow the pointer, easing rather than snapping.
     const targetX = pointer.pos.active ? pointer.pos.x : w / 2;
@@ -180,47 +203,76 @@ export function init(stageEl, hud) {
 
   /* ---------- drawing ---------- */
 
-  function drawHookah(ctx, L, h) {
+  /* The real photograph, drawn from its own aspect ratio. Until it
+     loads, a single stem line stands in so the stage is never an
+     empty rectangle - no placeholder box, no layout jump. */
+  function drawHookah(ctx, L) {
     const x = L.hookahX;
 
-    ctx.strokeStyle = '#2e2e2e';
-    ctx.fillStyle = '#141414';
-    ctx.lineWidth = 2;
-
-    // base
-    ctx.beginPath();
-    ctx.ellipse(x, L.floorY - 6, 46, 16, 0, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-
-    // vase
-    ctx.beginPath();
-    ctx.moveTo(x - 30, L.floorY - 10);
-    ctx.quadraticCurveTo(x - 46, L.floorY - 70, x - 16, L.floorY - 96);
-    ctx.lineTo(x + 16, L.floorY - 96);
-    ctx.quadraticCurveTo(x + 46, L.floorY - 70, x + 30, L.floorY - 10);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-
-    // stem
-    ctx.fillRect(x - 5, L.hookahTop + 22, 10, L.floorY - 96 - L.hookahTop - 20);
-    ctx.strokeRect(x - 5, L.hookahTop + 22, 10, L.floorY - 96 - L.hookahTop - 20);
-
-    // bowl
-    ctx.beginPath();
-    ctx.moveTo(x - 22, L.hookahTop + 22);
-    ctx.lineTo(x - 13, L.hookahTop);
-    ctx.lineTo(x + 13, L.hookahTop);
-    ctx.lineTo(x + 22, L.hookahTop + 22);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
+    if (hookah.ready) {
+      ctx.save();
+      // Sunk slightly into the site's black so a bright product
+      // render does not sit on the page like a sticker.
+      ctx.globalAlpha = 0.96;
+      ctx.drawImage(hookah.img, x - L.hookahW / 2, L.hookahTopY, L.hookahW, L.hookahH);
+      ctx.restore();
+    } else {
+      ctx.strokeStyle = '#2a2a2a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, L.hookahTopY + 20);
+      ctx.lineTo(x, L.floorY - 10);
+      ctx.stroke();
+    }
 
     // The bowl warms up briefly on every catch.
     if (state.glow > 0) {
-      const g = ctx.createRadialGradient(x, L.hookahTop, 2, x, L.hookahTop, 70);
-      g.addColorStop(0, `rgba(255,90,31,${0.5 * state.glow})`);
+      const bowlY = L.hookahTopY + L.hookahH * 0.08;
+      const g = ctx.createRadialGradient(x, bowlY, 2, x, bowlY, 90);
+      g.addColorStop(0, `rgba(255,90,31,${0.55 * state.glow})`);
       g.addColorStop(1, 'rgba(255,90,31,0)');
       ctx.fillStyle = g;
-      ctx.fillRect(x - 70, L.hookahTop - 70, 140, 140);
+      ctx.fillRect(x - 90, bowlY - 90, 180, 180);
+    }
+  }
+
+  /* Smoke is procedural: soft circles that rise, spread and fade.
+     Cheap, and it reacts to play - the bowl puffs harder for a
+     moment after every catch. */
+  function updateSmoke(dt, L) {
+    if (prefersReducedMotion()) return;
+
+    const rate = 5 + state.glow * 34;
+    if (Math.random() < dt * rate) {
+      state.smoke.push({
+        x: L.hookahX + rand(-6, 6),
+        y: L.hookahTopY + L.hookahH * 0.06,
+        r: rand(5, 11),
+        vy: rand(-26, -13),
+        drift: rand(-11, 11),
+        life: 1,
+      });
+    }
+
+    for (let i = state.smoke.length - 1; i >= 0; i--) {
+      const s = state.smoke[i];
+      s.y += s.vy * dt;
+      s.x += s.drift * dt;
+      s.r += 15 * dt;             // spreads as it rises
+      s.life -= dt * 0.42;
+      if (s.life <= 0) state.smoke.splice(i, 1);
+    }
+  }
+
+  function drawSmoke(ctx) {
+    for (const s of state.smoke) {
+      const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+      g.addColorStop(0, `rgba(220,220,220,${0.1 * s.life})`);
+      g.addColorStop(1, 'rgba(220,220,220,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -239,7 +291,8 @@ export function init(stageEl, hud) {
     ctx.lineTo(w, L.floorY + 10);
     ctx.stroke();
 
-    drawHookah(ctx, L, h);
+    drawHookah(ctx, L);
+    drawSmoke(ctx);
 
     // coals
     for (const c of state.coals) {

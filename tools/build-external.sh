@@ -60,3 +60,102 @@ ffmpeg -y -loglevel error \
 
 echo "generated:"
 du -h "$out"/*.mp4
+
+# ===============================================================
+# PROVIDED MEDIA
+#
+# Converts the reaction GIFs, TMNT clips, cut-out PNGs and Sur-Ron
+# stills that live outside the repo. Set SRC to point at them:
+#
+#     SRC="/mnt/c/Users/Volodka/Desktop/miracle" bash tools/build-external.sh
+#
+# Skipped silently when SRC is absent, so the procedural loops above
+# can still be rebuilt on a machine without the originals.
+# ===============================================================
+
+SRC="${SRC:-/mnt/c/Users/Volodka/Desktop/miracle}"
+[[ -d "$SRC" ]] || { echo; echo "SRC not found ($SRC) - skipping provided media."; exit 0; }
+
+ext="$repo/assets/external"
+mkdir -p "$ext"/{reactions,tmnt,surron,hookah,diving,gift}
+
+# --- GIF -> MP4 -------------------------------------------------
+# The supplied GIFs total ~58 MB. None of them uses transparency
+# (checked: every one is a fully opaque rectangle), so MP4 is safe
+# and lands roughly 20x smaller. A GIF is 256 colours decoded frame
+# by frame on the CPU; the MP4 keeps full colour and is decoded by
+# video hardware, which is what keeps a phone from getting hot.
+#
+# fps=18 and 420px wide: these play at thumbnail size in the layout,
+# so the source resolution is far past what is visible.
+gif2mp4() {
+  local in="$1" out_file="$2"
+  [[ -f "$in" ]] || { echo "  MISSING $in"; return; }
+  ffmpeg -y -loglevel error -i "$in" \
+    -vf "fps=18,scale=420:-2:flags=lanczos" \
+    -c:v libx264 -crf 30 -preset slow -pix_fmt yuv420p \
+    -movflags +faststart -an "$out_file"
+}
+
+echo
+echo "reaction clips:"
+for pair in \
+  "reaction1.gif:reactions/reaction1.mp4" \
+  "reaction2.gif:reactions/reaction2.mp4" \
+  "reaction3.gif:reactions/reaction3.mp4" \
+  "absurd1.gif:reactions/absurd1.mp4" \
+  "absurd2.gif:reactions/absurd2.mp4" \
+  "celebration1.gif:reactions/celebration1.mp4" \
+  "celebretion2.gif:reactions/celebration2.mp4" \
+  "fail1.gif:reactions/fail1.mp4" \
+  "fail2.gif:reactions/fail2.mp4" \
+  "TMNT1.gif:tmnt/tmnt1.mp4" \
+  "TMNT2.gif:tmnt/tmnt2.mp4" \
+  "TMNT3.gif:tmnt/tmnt3.mp4" \
+  "reveal.gif:tmnt/reveal.mp4" ; do
+  gif2mp4 "$SRC/${pair%%:*}" "$ext/${pair##*:}"
+  echo "  ${pair##*:}"
+done
+
+# --- cut-out PNGs ----------------------------------------------
+# These six are genuine cut-outs: 38-75% of their pixels are fully
+# transparent. That alpha is the whole point - the hookah stands on
+# the game's own background, the diving objects sit in the water -
+# so they must NOT go through the JPEG path used for photographs.
+#
+# Written as lossy WebP, which keeps the alpha channel at roughly a
+# third of the PNG size, plus the PNG itself as a fallback.
+cutout() {
+  local in="$1" name="$2" dir="$3" max="${4:-900}"
+  [[ -f "$in" ]] || { echo "  MISSING $in"; return; }
+  local vf="scale='min(iw,$max)':-2:flags=lanczos"
+  ffmpeg -y -loglevel error -i "$in" -vf "$vf" -c:v libwebp -quality 82 \
+         -compression_level 6 "$ext/$dir/$name.webp"
+  ffmpeg -y -loglevel error -i "$in" -vf "$vf" "$ext/$dir/$name.png"
+  echo "  $dir/$name"
+}
+
+echo
+echo "cut-outs:"
+cutout "$SRC/hookah.png"          hookah    hookah 620
+cutout "$SRC/Revo.png"            revo      diving 420
+cutout "$SRC/keys.png"            keys      diving 420
+cutout "$SRC/earrings.png"        earring   diving 420
+cutout "$SRC/present.png"         present   gift   1200
+cutout "$SRC/sur-ron силуэт.png"  silhouette surron 900
+
+# --- Sur-Ron stills (opaque photographs) -----------------------
+echo
+echo "sur-ron stills:"
+for n in 1 2 3 4 5; do
+  f="$SRC/sur-ron$n.jpg"
+  [[ -f "$f" ]] || { echo "  MISSING $f"; continue; }
+  ffmpeg -y -loglevel error -i "$f" -vf "scale='min(iw,900)':-2:flags=lanczos" \
+         -c:v libwebp -quality 80 "$ext/surron/surron$n.webp"
+  ffmpeg -y -loglevel error -i "$f" -vf "scale='min(iw,900)':-2:flags=lanczos" \
+         -q:v 4 "$ext/surron/surron$n.jpg"
+  echo "  surron/surron$n"
+done
+
+echo
+echo "external total: $(du -sh "$ext" | cut -f1)"

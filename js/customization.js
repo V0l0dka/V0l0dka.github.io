@@ -1,71 +1,79 @@
 /* ============================================================
-   07 - SUR-RON CONFIGURATOR
+   07 - SUR-RON
 
-   Phase 1 builds the real interface and the real state machine.
-   What is missing is only the artwork: each variant will map to a
-   transparent PNG layer stacked over the bike.
+   Phase 1 shipped five categories (wheels, light, seat, stickers,
+   armour) with no artwork behind any of them - every option was a
+   label that changed nothing.
 
-   Adding the art later means filling in `layer` below and nothing
-   else - the selection, ordering and UI already work.
+   There are no per-part layer assets and there never will be, so
+   the honest version is smaller: three controls that each make a
+   real, visible change to a real photograph.
+
+     РАКУРС      switches between the five actual Sur-Ron stills
+     ФАРА        renders a headlight glow
+     ПОДСВЕТКА   renders acid underglow
+
+   Two fake options are worse than one real one. If proper layer
+   art ever exists, add it here and nowhere else.
    ============================================================ */
 
 import { $, el } from './dom.js';
+import { asset } from './media-config.js';
 
-/* Layer order is bottom to top. `layer: null` means "no artwork
-   mapped yet" - the option still selects, it just draws nothing. */
+/* The five supplied stills, plus the cut-out silhouette which is
+   the only one with a transparent background. */
+const VIEWS = ['surronSilhouette', 'surron1', 'surron2', 'surron3', 'surron4', 'surron5'];
+
 const CATEGORIES = [
   {
-    id: 'wheels',
-    label: 'WHEELS',
-    options: [
-      { id: 'stock', label: 'STOCK', layer: null },
-      { id: 'knobby', label: 'KNOBBY', layer: null },
-      { id: 'street', label: 'STREET', layer: null },
-    ],
+    id: 'view',
+    label: 'РАКУРС',
+    options: VIEWS.map((name, i) => ({
+      id: name,
+      label: i === 0 ? 'СИЛУЭТ' : String(i).padStart(2, '0'),
+    })),
   },
   {
     id: 'light',
-    label: 'LIGHT',
+    label: 'ФАРА',
     options: [
-      { id: 'none', label: 'NONE', layer: null },
-      { id: 'round', label: 'ROUND', layer: null },
-      { id: 'bar', label: 'LED BAR', layer: null },
+      { id: 'off', label: 'ВЫКЛ' },
+      { id: 'warm', label: 'ТЁПЛАЯ' },
+      { id: 'acid', label: 'КИСЛОТНАЯ' },
     ],
   },
   {
-    id: 'seat',
-    label: 'SEAT',
+    id: 'glow',
+    label: 'ПОДСВЕТКА',
     options: [
-      { id: 'stock', label: 'STOCK', layer: null },
-      { id: 'long', label: 'LONG', layer: null },
-    ],
-  },
-  {
-    id: 'stickers',
-    label: 'STICKERS',
-    options: [
-      { id: 'clean', label: 'CLEAN', layer: null },
-      { id: 'acid', label: 'ACID', layer: null },
-      { id: 'tmnt', label: 'TMNT', layer: null },
-    ],
-  },
-  {
-    id: 'armor',
-    label: 'ARMOR',
-    options: [
-      { id: 'none', label: 'NONE', layer: null },
-      { id: 'panzer', label: 'PANZER', layer: null },
+      { id: 'off', label: 'НЕТ' },
+      { id: 'acid', label: 'КИСЛОТА' },
     ],
   },
 ];
 
-/* Current selection, one option id per category. */
-const state = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.options[0].id]));
+const state = { view: VIEWS[0], light: 'off', glow: 'off' };
 
 export function buildCustomization() {
   const ui = $('[data-config-ui]');
   const stage = $('[data-config-stage]');
   if (!ui || !stage) return;
+
+  // Replace the Phase 1 text placeholder with the real bike.
+  stage.innerHTML = '';
+
+  const img = el('img', {
+    class: 'config__bike',
+    alt: 'Sur-Ron Light Bee X',
+    decoding: 'async',
+    loading: 'lazy',
+  });
+
+  const beam = el('div', { class: 'config__beam', 'aria-hidden': 'true' });
+  const under = el('div', { class: 'config__under', 'aria-hidden': 'true' });
+  const caption = el('p', { class: 'config__caption' });
+
+  stage.append(under, img, beam, caption);
 
   for (const cat of CATEGORIES) {
     const options = el('div', { class: 'config__options' });
@@ -79,8 +87,13 @@ export function buildCustomization() {
         'data-opt': opt.id,
         text: opt.label,
       });
-
-      btn.addEventListener('click', () => select(cat, opt, options, stage));
+      btn.addEventListener('click', () => {
+        state[cat.id] = opt.id;
+        for (const sibling of options.children) {
+          sibling.setAttribute('aria-pressed', String(sibling.dataset.opt === opt.id));
+        }
+        render(img, beam, under, caption);
+      });
       options.append(btn);
     }
 
@@ -92,30 +105,20 @@ export function buildCustomization() {
     );
   }
 
-  render(stage);
+  render(img, beam, under, caption);
 }
 
-function select(cat, opt, group, stage) {
-  state[cat.id] = opt.id;
-
-  for (const btn of group.children) {
-    btn.setAttribute('aria-pressed', String(btn.dataset.opt === opt.id));
+function render(img, beam, under, caption) {
+  const entry = asset(state.view);
+  if (entry) {
+    img.src = entry.src;
+    // WebP is universal now, but fall back rather than show nothing.
+    img.onerror = () => { if (entry.fallback) { img.onerror = null; img.src = entry.fallback; } };
   }
 
-  render(stage);
-}
+  beam.dataset.mode = state.light;
+  under.dataset.mode = state.glow;
 
-/* Draws the current configuration. Once `layer` paths exist this
-   swaps to stacking <img class="config__layer"> elements; until
-   then it reports the build as text so the state is visible. */
-function render(stage) {
-  const placeholder = $('.config__placeholder', stage);
-  if (!placeholder) return;
-
-  const summary = CATEGORIES
-    .map((c) => `${c.label}: ${state[c.id].toUpperCase()}`)
-    .join('   ·   ');
-
-  placeholder.textContent = `SUR-RON LIGHT BEE X — BLACK\n${summary}`;
-  placeholder.style.whiteSpace = 'pre-line';
+  // The model name is a product name and stays in English.
+  caption.textContent = 'SUR-RON LIGHT BEE X - ЧЁРНЫЙ';
 }

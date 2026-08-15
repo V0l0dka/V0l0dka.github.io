@@ -9,9 +9,10 @@
    the camera shake, the dust and the parallax, not in the maths.
    ============================================================ */
 
-import { createStage, Loop, createOverlay, autoPause, rand } from './engine.js';
+import { createStage, Loop, createOverlay, autoPause, rand, loadSprite } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
+import { asset } from '../media-config.js';
 
 const SURVIVE = 40;          // seconds to win
 const GRAVITY = 2100;        // px/s²
@@ -22,6 +23,11 @@ const MAX_SPEED = 690;
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
   const overlay = createOverlay(stageEl, { startLabel: 'НАЧАТЬ' });
+
+  // The real Light Bee X, cut out. The vector bike below stays as
+  // the fallback: the game must be playable from the first frame,
+  // before any image has arrived.
+  const bike = loadSprite(asset('surronSilhouette'), stageEl);
 
   const state = {
     playing: false,
@@ -40,7 +46,7 @@ export function init(stageEl, hud) {
   };
 
   const paint = () => {
-    hud.textContent = `${String(Math.round(state.speed / 4)).padStart(3, '0')} KM/H`;
+    hud.textContent = `${String(Math.round(state.speed / 4)).padStart(3, '0')} КМ/Ч`;
   };
 
   const groundY = () => stage.size.h * 0.78;
@@ -90,6 +96,7 @@ export function init(stageEl, hud) {
       tone: won ? 'win' : 'lose',
       label: 'ЕЩЁ РАЗ',
       hint: won ? '' : `${state.t.toFixed(1)} с из ${SURVIVE}`,
+      moment: won ? 'surron-win' : 'surron-lose',
     });
 
     announce(won ? 'ну нормально' : 'зато красиво');
@@ -242,6 +249,48 @@ export function init(stageEl, hud) {
     ctx.rotate(state.rot);
     ctx.translate(-BIKE_W / 2, -BIKE_H / 2);
 
+    if (bike.ready) {
+      // Drawn from the photograph's own aspect ratio and anchored to
+      // the bottom of the collision box, so the wheels sit on the
+      // ground line no matter how tall the cut-out happens to be.
+      const w = BIKE_W * 1.42;
+      const h = w * (bike.img.height / bike.img.width);
+      const ox = (BIKE_W - w) / 2;
+      const oy = BIKE_H - h;
+
+      /* The real Light Bee X is black, and so is this game. Dropped
+         in untreated it disappeared completely - you could not see
+         the thing you were steering. So it gets a ground light
+         behind it and its brightness lifted. The photograph is
+         still the photograph; it is just lit. */
+      const gx = ox + w / 2;
+      const gy = BIKE_H;
+      const glow = ctx.createRadialGradient(gx, gy, 2, gx, gy, w * 0.72);
+      glow.addColorStop(0, 'rgba(215,255,0,.34)');
+      glow.addColorStop(1, 'rgba(215,255,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(ox - w * 0.3, oy, w * 1.6, h + 14);
+
+      ctx.save();
+      ctx.filter = state.crashed
+        ? 'brightness(1.5) contrast(1.15) saturate(1.4)'
+        : 'brightness(1.9) contrast(1.12)';
+      ctx.drawImage(bike.img, ox, oy, w, h);
+      ctx.restore();
+
+      // Crash tints the bike without needing a second image.
+      if (state.crashed) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = 'rgba(255,90,31,.5)';
+        ctx.fillRect(ox, oy, w, h);
+        ctx.restore();
+      }
+
+      ctx.restore();
+      return;
+    }
+
     const wheelR = 11;
 
     ctx.strokeStyle = state.crashed ? '#FF5A1F' : '#F4F2ED';
@@ -377,7 +426,7 @@ export function init(stageEl, hud) {
   stageEl.addEventListener('touchstart', onPointerDown, { passive: false });
 
   overlay.button.addEventListener('click', () => { sfx.click(); start(); });
-  overlay.show({ verdict: '', label: 'НАЧАТЬ', hint: 'пробел / тап — прыжок' });
+  overlay.show({ verdict: '', label: 'НАЧАТЬ', hint: 'пробел или тап - прыжок' });
 
   reset();
   stage.resize();

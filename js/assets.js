@@ -99,14 +99,14 @@ export const REVEAL_2026 = photo('2026');
    filename, so treat them as a starting point.
    ------------------------------------------------------------ */
 export const ACTIVITIES = [
-  { id: 'photoshoot', label: 'PHOTOSHOOT', media: photo('img_0831'), kind: 'photo' },
-  { id: 'travel', label: 'TRAVEL', media: photo('img_0353'), kind: 'photo' },
-  { id: 'water', label: 'WAKEBOARD', media: photo('img_8752'), kind: 'photo' },
-  { id: 'diving', label: 'DIVING', media: photo('img_8746'), kind: 'photo' },
+  { id: 'photoshoot', label: 'ФОТОСЕССИЯ', media: photo('img_0831'), kind: 'photo' },
+  { id: 'travel', label: 'ПУТЕШЕСТВИЯ', media: photo('img_0353'), kind: 'photo' },
+  { id: 'water', label: 'ВЕЙКБОРД', media: photo('img_8752'), kind: 'photo' },
+  { id: 'diving', label: 'ДАЙВИНГ', media: photo('img_8746'), kind: 'photo' },
   { id: 'surron', label: 'SUR-RON', media: photo('img_8660'), kind: 'photo' },
-  { id: 'hookah', label: 'HOOKAH', media: video('img_0572'), kind: 'video' },
+  { id: 'hookah', label: 'КАЛЬЯН', media: video('img_0572'), kind: 'video' },
   { id: 'metan', label: 'METAN', media: video('img_1433'), kind: 'video' },
-  { id: 'snow', label: 'SNOWBOARD', media: video('img_8672'), kind: 'video' },
+  { id: 'snow', label: 'СНОУБОРД', media: video('img_8672'), kind: 'video' },
 ];
 
 /* Smoke exhale. Used as the visual bridge from HOOKAH into the
@@ -148,7 +148,7 @@ export const STATS = [
     value: '60',
     plus: true,
     label: 'ТРАВМ',
-    detail: 'SURVIVAL RATE: SURPRISINGLY HIGH',
+    detail: 'ВЫЖИВАЕМОСТЬ: ПОДОЗРИТЕЛЬНО ВЫСОКАЯ',
     kind: 'text',
   },
   {

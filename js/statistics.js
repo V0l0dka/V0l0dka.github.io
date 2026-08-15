@@ -55,11 +55,13 @@ function toggle(node, stat) {
   if (open && stat.kind === 'particles') burst(node);
   if (open && stat.detail) announce(stat.detail);
 
-  // The pulse trace appears under ТРАВМ the first time it is
-  // opened, and is built only then - not on page load.
+  // The pulse trace and the crash clip appear under ТРАВМ the first
+  // time it is opened, and are built only then - not on page load.
   if (open && stat.id === 'injuries' && !node.dataset.moment) {
     node.dataset.moment = '1';
-    mountMoment($('.stat__detail', node), 'stat-injuries', { className: 'moment--trace' });
+    const detail = $('.stat__detail', node);
+    mountMoment(detail, 'stat-injuries-trace', { className: 'moment--trace' });
+    mountMoment(detail, 'stat-injuries');
   }
 }
 

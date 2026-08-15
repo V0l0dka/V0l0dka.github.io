@@ -1,128 +1,136 @@
 /* ============================================================
-   EXTERNAL MEDIA
+   MEDIA RENDERER
 
-   Central registry for the small "easter egg" moments dotted
-   through the page. Every one of them is declared here and
-   nowhere else, so swapping a clip is a one-line edit.
+   Turns a placement slot from js/media-config.js into a DOM node.
+   This file names no files and no paths - swap a clip in the
+   config and nothing here changes.
 
-   Three rules this file enforces:
+   Behaviour it guarantees for every decorative clip:
 
-   1. NOTHING IS HOTLINKED. Every `src` is a local path under
-      /assets/external/. A remote GIF can vanish, get rate
-      limited, change to something else entirely, or leak the
-      visitor's IP to a third party.
+     - nothing downloads until the element is near the viewport
+     - playback stops the moment it leaves again
+     - it plays a set number of times, then freezes on its last
+       frame rather than looping forever in the corner of the eye
+     - it enters with a short animation instead of popping in
+     - a file that does not exist removes its own element, so a
+       missing decoration can never leave a hole or a broken icon
+     - under prefers-reduced-motion nothing animates or autoplays
+   ============================================================ */
 
-   2. A MISSING FILE IS NOT AN ERROR. Slots below can point at
-      files that do not exist yet. The element removes itself on
-      the error event, leaving no gap and no broken-image icon.
-      That means you can drop a file in later and it just starts
-      appearing.
-
-   3. NOTHING LOADS UNTIL IT IS NEEDED. Video is preload="none"
-      and only begins buffering when it scrolls into view; it
-      pauses again on the way out. Images are loading="lazy".
-
-   ------------------------------------------------------------
-   ON COPYRIGHT
-
-   The brief asked for TMNT imagery and reaction GIFs from GIPHY
-   or Tenor. Those are other people's work, and this site is
-   public, so re-hosting them here is redistribution rather than
-   private use. The slots are wired and waiting; put files in
-   only where you hold the rights or the licence allows it.
-
-   What ships now is generated in tools/build-external.sh:
-   original noise and glitch loops, no third-party material.
-   ------------------------------------------------------------ */
-
-import { el } from './dom.js';
-
-const DIR = '/assets/external';
-
-/* `kind` is 'video' or 'image'. Video is strongly preferred:
-   an MP4 of the same clip is routinely 5-10x smaller than the
-   GIF, and it is decoded by the GPU instead of frame-by-frame
-   on the CPU. Convert GIFs before adding them - the command is
-   in assets/external/README.md. */
-export const MEDIA = {
-  /* archive, after "появляется тяга к СВО" */
-  'archive-2022': null,
-
-  /* 2024 - the corrupted archive */
-  'void-2024': { kind: 'video', src: `${DIR}/reactions/static.mp4`, label: 'помехи' },
-
-  /* 2025 - ERROR 404 */
-  'void-2025': { kind: 'video', src: `${DIR}/reactions/glitch.mp4`, label: 'сбой' },
-
-  /* statistics, under 60+ ТРАВМ */
-  'stat-injuries': { kind: 'video', src: `${DIR}/reactions/pulse.mp4`, label: 'пульс' },
-
-  /* game results */
-  'game-win': null,
-  'game-lose': null,
-
-  /* chapter 08 */
-  'tmnt-hero': null,
-  'tmnt-armor': null,
-};
+import { el, prefersReducedMotion } from './dom.js';
+import { resolve } from './media-config.js';
 
 /* ------------------------------------------------------------
-   Build one moment. Returns null when the slot is empty, so the
-   caller can simply skip it.
+   Build a moment for a slot. Returns null when the slot is empty
+   so callers can simply skip it.
    ------------------------------------------------------------ */
-export function createMoment(key, { className = '' } = {}) {
-  const entry = MEDIA[key];
-  if (!entry || !entry.src) return null;
+export function createMoment(slot, { className = '' } = {}) {
+  const entry = resolve(slot);
+  if (!entry) return null;
 
-  const node = entry.kind === 'video'
-    ? el('video', {
-        src: entry.src,
-        muted: true,
-        loop: true,
-        playsinline: true,
-        preload: 'none',
-        'aria-hidden': 'true',
-      })
-    : el('img', {
-        src: entry.src,
-        alt: entry.label || '',
-        loading: 'lazy',
-        decoding: 'async',
-      });
+  const node = entry.kind === 'video' ? buildVideo(entry) : buildImage(entry);
 
-  const wrap = el('figure', { class: `moment ${className}`.trim(), 'data-moment': key }, node);
+  const wrap = el('figure', {
+    class: `moment moment--${entry.size} ${className}`.trim(),
+    'data-moment': slot,
+  }, node);
 
-  // A slot that points at a file which is not there yet simply
-  // disappears rather than leaving a hole in the layout.
+  // The single most important line in this file: a decoration that
+  // fails must vanish, not leave evidence.
   node.addEventListener('error', () => wrap.remove(), { once: true });
 
-  if (entry.kind === 'video') watch(node);
-
+  observe(wrap, node, entry);
   return wrap;
 }
 
-/* Start buffering only on approach; pause on the way out. Without
-   this every clip on a 40 000 px page decodes continuously. */
-function watch(video) {
-  const io = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting) {
-      if (!video.dataset.started) {
-        video.load();
-        video.dataset.started = '1';
-      }
-      video.play().catch(() => { /* refused autoplay: first frame stands in */ });
-    } else {
-      video.pause();
-    }
-  }, { threshold: 0.2 });
-
-  io.observe(video);
+function buildVideo(entry) {
+  return el('video', {
+    src: entry.src,
+    muted: true,
+    playsinline: true,
+    preload: 'none',
+    // Looping is managed by hand below so it can be stopped after
+    // a set number of passes.
+    'aria-hidden': 'true',
+  });
 }
 
-/* Convenience: append a moment to a host element if it exists. */
-export function mountMoment(host, key, opts) {
+function buildImage(entry) {
+  const img = el('img', {
+    src: entry.src,
+    alt: '',
+    loading: 'lazy',
+    decoding: 'async',
+    'aria-hidden': 'true',
+  });
+
+  // WebP with alpha is universal on current browsers, but if it
+  // ever fails the PNG beside it takes over rather than the whole
+  // element disappearing.
+  if (entry.fallback) {
+    img.addEventListener('error', function onErr() {
+      img.removeEventListener('error', onErr);
+      img.src = entry.fallback;
+    }, { once: true });
+  }
+  return img;
+}
+
+/* ------------------------------------------------------------
+   Load, play and stop by visibility.
+   ------------------------------------------------------------ */
+function observe(wrap, node, entry) {
+  const reduced = prefersReducedMotion();
+
+  const io = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) {
+      wrap.classList.add('is-in');
+      if (node.tagName === 'VIDEO' && !reduced) play(node, entry);
+    } else if (node.tagName === 'VIDEO') {
+      node.pause();
+    }
+  }, { threshold: 0.25 });
+
+  io.observe(wrap);
+}
+
+function play(video, entry) {
+  if (!video.dataset.started) {
+    video.load();
+    video.dataset.started = '1';
+    video.dataset.plays = '0';
+
+    // Count passes and freeze on the last frame once the budget is
+    // spent. `loops: 0` means run forever.
+    video.addEventListener('ended', () => {
+      const plays = Number(video.dataset.plays) + 1;
+      video.dataset.plays = String(plays);
+
+      if (entry.loops === 0 || plays < entry.loops) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      } else {
+        video.classList.add('is-frozen');
+      }
+    });
+  }
+
+  if (video.classList.contains('is-frozen')) return;
+  video.play().catch(() => { /* autoplay refused: first frame stands in */ });
+}
+
+/* Append a moment to a host element, if the slot has anything. */
+export function mountMoment(host, slot, opts) {
   if (!host) return null;
-  const node = createMoment(key, opts);
+  const node = createMoment(slot, opts);
   if (node) host.append(node);
   return node;
+}
+
+/* Replace whatever moment a host already holds. Used by the game
+   overlays, which show a different reaction for win and lose. */
+export function swapMoment(host, slot, opts) {
+  if (!host) return null;
+  host.querySelectorAll('[data-moment]').forEach((n) => n.remove());
+  return mountMoment(host, slot, opts);
 }

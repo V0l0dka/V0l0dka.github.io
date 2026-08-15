@@ -43,13 +43,21 @@ function filledYear(entry) {
     media.append(shot);
   }
 
-  return el('article', { class: 'year', 'data-year': entry.year },
+  const article = el('article', { class: 'year', 'data-year': entry.year },
     el('h3', { class: 'year__num', text: entry.year }),
     entry.caption
       ? el('p', { class: 'year__caption', text: entry.caption })
       : null,
-    media,
   );
+
+  // A year may have a reaction pinned to it in media-config. Only
+  // 2022 does today; every other year resolves to null and nothing
+  // is added. It sits after the caption and before the photographs
+  // so it can never land on top of either.
+  mountMoment(article, `archive-${entry.year}`, { className: 'moment--aside' });
+
+  article.append(media);
+  return article;
 }
 
 /* ---------- 2024 and 2025 -----------------------------------
@@ -66,16 +74,16 @@ function emptyYear(entry) {
 
   if (entry.year === '2024') {
     void_.append(
-      el('p', { class: 'void__line', text: 'NO DATA' }),
+      el('p', { class: 'void__line', text: 'НЕТ ДАННЫХ' }),
       el('p', { class: 'void__line', text: 'архив повреждён' }),
     );
     // A band of dead-channel static sits where the photographs
-    // would have been. It is the only thing in this year.
-    mountMoment(void_, 'void-2024', { className: 'moment--band' });
-    void_.append(
-      el('p', { class: 'void__line', text: 'фотографии отсутствуют' }),
-      el('p', { class: 'void__line void__line--loud', text: 'мы не общались.' }),
-    );
+    // would have been, then a small reaction - then the line that
+    // actually carries the year, last and alone.
+    mountMoment(void_, 'void-2024-signal', { className: 'moment--band' });
+    void_.append(el('p', { class: 'void__line', text: 'фотографии отсутствуют' }));
+    mountMoment(void_, 'void-2024');
+    void_.append(el('p', { class: 'void__line void__line--loud', text: 'мы не общались.' }));
   } else {
     void_.append(
       el('p', { class: 'void__line void__line--loud', text: 'тоже ничего.' }),
@@ -83,7 +91,8 @@ function emptyYear(entry) {
       el('p', { class: 'void__line', text: 'и вообще давайте не будем об этом.' }),
       searchBlock(),
     );
-    mountMoment(void_, 'void-2025', { className: 'moment--band' });
+    mountMoment(void_, 'void-2025-signal', { className: 'moment--band' });
+    mountMoment(void_, 'void-2025');
   }
 
   year.append(void_);
@@ -103,7 +112,7 @@ function searchBlock() {
   });
 
   const wrap = el('div', { class: 'void__search' },
-    el('span', { text: 'SEARCHING FOR MIRA...' }),
+    el('span', { text: 'ИЩЕМ МИРУ...' }),
     percent,
     el('div', { class: 'void__bar' }),
     status,
@@ -114,7 +123,8 @@ function searchBlock() {
 
   const fail = () => {
     failed = true;
-    status.textContent = 'ERROR 404 — Мира не найдена.';
+    // Кириллическое тире, не длинное - см. правила проекта.
+    status.textContent = 'ОШИБКА 404 - Мира не найдена.';
   };
 
   // Fail once the block has actually been looked at, not on page load.

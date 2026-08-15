@@ -144,22 +144,49 @@ Rules they all obey:
 Sound is synthesised in `js/audio.js` with WebAudio - there are no audio files.
 Off by default, wired to the existing toggle.
 
-## phase 2 is done. what is left.
+## external media
 
-Everything in the brief is built except the pieces below.
+Reaction clips, TMNT, the cut-outs and the gift photograph all live under
+`assets/external/`. **Every path is declared in `js/media-config.js`** and
+nowhere else - that file is where you swap a clip for a different one.
 
-- **The Sur-Ron configurator still has no artwork.** The interface and state
-  machine work; each variant needs a transparent PNG. Fill in `layer:` in
-  `js/customization.js` and the stacking already works.
-- **Several external-media slots are empty** - `archive-2022`, `game-win`,
-  `game-lose`, `tmnt-hero`, `tmnt-armor`. See `assets/external/README.md`. An
-  empty slot renders nothing, so the page is complete without them.
-- **The TMNT chapter is original art, not TMNT art.** The brief asked for
-  Turtles imagery and reaction GIFs from GIPHY/Tenor. Those belong to other
-  people and this site is public, so re-hosting them here would be
-  redistribution - and it stays in git history permanently. The chapter is
-  built as a drawn comic panel instead: CSS halftone, speed lines, inline SVG
-  shell. If you hold rights to specific artwork, drop it in `assets/external/tmnt/`
-  and point the slots at it.
+`PLACEMENTS` maps a slot to an asset plus how it behaves:
+
+```js
+'stat-injuries': { asset: 'fail1', loops: 2, size: 'md' },
+```
+
+`loops` is how many times it plays before freezing on its last frame. A
+reaction that repeats forever stops being a joke and becomes wallpaper, so
+most are 2-3. `0` loops indefinitely and is used only for the loading spinner.
+
+Rebuild the converted media from the originals with:
+
+```bash
+SRC="/mnt/c/Users/Volodka/Desktop/miracle" bash tools/build-external.sh
+```
+
+The supplied GIFs were ~58 MB. None used transparency, so they are converted
+to MP4 and come out around 20x smaller - 3.7 MB for the whole library. The
+six cut-outs stay WebP-with-alpha, because their transparent background is the
+point: the hookah stands on the game's own backdrop, the diving objects sit in
+the water.
+
+**A missing file is not an error.** Any slot may point at something that does
+not exist, or be `null`. The element removes itself, so a decoration can never
+leave a hole or a broken-image icon.
+
+## language
+
+The site is Russian. English survives only where it is a brand, a model or a
+deliberate designation: `Sur-Ron`, `Light Bee X`, `Revo`, `METAN`, and the
+chapter title `MIRA IRL`.
+
+## what is left
+
 - **The final personal message is empty.** It is in `index.html`, marked
   `data-final-message`. That one is for you to write.
+- **`diving-win` has no reaction** on purpose - recovering all three already
+  triggers the surfacing transition, and a GIF on top would talk over it. Set
+  an asset on that slot in `js/media-config.js` if you want one.
+- **Unused supplied clips:** none. All 13 GIFs and all 6 cut-outs are placed.

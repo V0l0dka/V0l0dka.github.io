@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Личный цифровой архив. С днём рождения, Мира.">
   <meta name="robots" content="noindex, nofollow">
-  <title>МИРА / 2015—2026</title>
+  <title>МИРА / 2015-2026</title>
 
   <link rel="preconnect" href="/">
   <link rel="stylesheet" href="/css/main.css">
@@ -47,7 +47,10 @@
         </li>
       </ul>
 
-      <p class="intro__error" data-load-error hidden>ERROR: TOO MUCH</p>
+      <!-- Filled by js/interactions.js once the meters overrun. -->
+      <div class="intro__reaction" data-intro-reaction></div>
+
+      <p class="intro__error" data-load-error hidden>ОШИБКА: СЛИШКОМ МНОГО</p>
     </div>
 
     <div class="intro__stage intro__stage--greet" data-intro-greet hidden>
@@ -84,7 +87,7 @@
   <header class="archive__intro">
     <p class="kicker">ГЛАВА 03</p>
     <h2 class="display display--l">АРХИВ</h2>
-    <p class="caption">2015 — 2026</p>
+    <p class="caption">2015 - 2026</p>
   </header>
 
   <div class="archive" data-archive></div>
@@ -152,33 +155,33 @@
   </div>
 
   <article class="game" id="game-coal" data-game="coal">
-    <p class="kicker">MISSION 01</p>
-    <h3 class="display display--m">CATCH THE COAL</h3>
+    <p class="kicker">ЗАДАНИЕ 01</p>
+    <h3 class="display display--m">ЛОВИ УГОЛЬ</h3>
     <div class="game__stage" data-game-stage="coal">
       <div class="game__hud">
-        <span class="hud__label">COALS</span>
+        <span class="hud__label">УГЛИ</span>
         <span class="hud__value" data-hud="coal">00 / 10</span>
       </div>
     </div>
   </article>
 
   <article class="game" id="game-surron" data-game="surron">
-    <p class="kicker">MISSION 02</p>
-    <h3 class="display display--m">DON'T CRASH</h3>
+    <p class="kicker">ЗАДАНИЕ 02</p>
+    <h3 class="display display--m">НЕ РАЗБЕЙСЯ</h3>
     <div class="game__stage" data-game-stage="surron">
       <div class="game__hud">
-        <span class="hud__label">SPEED</span>
-        <span class="hud__value" data-hud="surron">000 KM/H</span>
+        <span class="hud__label">СКОРОСТЬ</span>
+        <span class="hud__value" data-hud="surron">000 КМ/Ч</span>
       </div>
     </div>
   </article>
 
   <article class="game game--deep" id="game-diving" data-game="diving">
-    <p class="kicker">MISSION 03</p>
-    <h3 class="display display--m">GO DEEPER</h3>
+    <p class="kicker">ЗАДАНИЕ 03</p>
+    <h3 class="display display--m">ГЛУБЖЕ</h3>
     <div class="game__stage" data-game-stage="diving">
       <div class="game__hud">
-        <span class="hud__label">RECOVERED</span>
+        <span class="hud__label">НАЙДЕНО</span>
         <span class="hud__value" data-hud="diving">0 / 3</span>
       </div>
     </div>
@@ -187,8 +190,10 @@
 
 
 <!-- ============================================================
-     CHAPTER 07 - SUR-RON CUSTOMIZATION
-     Phase 1: the configurator shell, real layers land in Phase 2.
+     CHAPTER 07 - SUR-RON
+     Three controls that each change the real photograph: which of
+     the five stills is shown, the headlight, and the underglow.
+     Built by js/customization.js.
      ============================================================ -->
 <section class="chapter chapter--config" id="config" aria-label="Кастомизация Sur-Ron">
   <header class="config__intro">
@@ -198,7 +203,7 @@
 
   <div class="config">
     <div class="config__stage" data-config-stage>
-      <p class="config__placeholder">SUR-RON LIGHT BEE X — BLACK</p>
+      <p class="config__placeholder">SUR-RON LIGHT BEE X - ЧЁРНЫЙ</p>
     </div>
     <div class="config__ui" data-config-ui></div>
   </div>
@@ -206,42 +211,60 @@
 
 
 <!-- ============================================================
-     CHAPTER 08 - TMNT GIFT
-     Short, loud, then gone.
+     CHAPTER 08 - THE GIFT
+
+     Staged by js/interactions.js. Each step is revealed in turn,
+     so the whole chapter is one sequence rather than a page of
+     things sitting there waiting to be read.
+
+     The centrepiece is the real photograph of the actual gift.
      ============================================================ -->
 <section class="chapter chapter--gift" id="gift" aria-label="Подарок">
   <div class="gift" data-gift>
-    <p class="gift__tag">LEGENDARY ITEM</p>
 
-    <!-- Comic panel. Halftone + speed lines are drawn in CSS; the
-         shell plate is inline SVG. No third-party artwork. -->
+    <!-- 1. the setup -->
+    <p class="gift__setup" data-gift-setup>КОЕ-ЧЕГО ВСЁ-ТАКИ НЕ ХВАТАЕТ.</p>
+
+    <!-- 2 + 4. TMNT enters, comic framing -->
     <div class="gift__panel" data-gift-panel aria-hidden="true">
       <div class="gift__rays"></div>
-      <div class="gift__halftone"></div>
-
-      <svg class="gift__shell" viewBox="0 0 200 200" role="presentation">
-        <g class="gift__shell-g">
-          <circle cx="100" cy="100" r="72" class="shell-plate"/>
-          <path d="M100 28 L148 58 L148 142 L100 172 L52 142 L52 58 Z" class="shell-hex"/>
-          <path d="M100 46 L132 66 L132 134 L100 154 L68 134 L68 66 Z" class="shell-hex shell-hex--in"/>
-          <path d="M52 78 L148 78 M52 122 L148 122 M100 28 L100 172" class="shell-seam"/>
-        </g>
-      </svg>
-
       <div class="gift__slot" data-gift-slot></div>
+      <div class="gift__halftone"></div>
     </div>
 
-    <p class="gift__class" data-gift-class hidden>ARMOR CLASS: <b>TURTLE</b></p>
+    <!-- 3. -->
+    <p class="gift__tag" data-gift-tag hidden>ЛЕГЕНДАРНЫЙ ПРЕДМЕТ</p>
+    <p class="gift__class" data-gift-class hidden>КЛАСС ЗАЩИТЫ: <b>ЧЕРЕПАХА</b></p>
 
-    <button class="btn btn--acid" data-gift-equip>EQUIP</button>
+    <!-- 5. -->
+    <button class="btn btn--acid gift__equip" data-gift-equip hidden>ЭКИПИРОВАТЬ</button>
 
+    <!-- 6 + 7. the real thing. Tilt is applied to the inner element
+         so the reveal animation and the tilt never fight over the
+         same transform. -->
+    <figure class="gift__reveal" data-gift-reveal hidden>
+      <div class="gift__flash" data-gift-flash aria-hidden="true"></div>
+      <div class="gift__tilt" data-gift-tilt>
+        <picture>
+          <source data-present-webp type="image/webp">
+          <img data-present-img alt="Защитный панцирь - подарок" decoding="async" loading="lazy">
+        </picture>
+        <div class="gift__sweep" aria-hidden="true"></div>
+      </div>
+    </figure>
+
+    <!-- 8. -->
     <ul class="gift__stats" data-gift-stats hidden>
-      <li>+100 ARMOR</li>
-      <li>+50 STYLE</li>
-      <li>+∞ CHAOS</li>
+      <li>+100 К ЗАЩИТЕ</li>
+      <li>+50 К СТИЛЮ</li>
+      <li>+∞ К ЕБАНУТОСТИ</li>
     </ul>
 
-    <p class="gift__word" data-gift-word hidden>ПОДАРОК</p>
+    <!-- 9. -->
+    <p class="gift__word" data-gift-word hidden>ПОДАРОК ДЛЯ ТЕБЯ.</p>
+
+    <!-- 11. last laugh, before the quiet chapters -->
+    <div class="gift__outro" data-gift-outro></div>
   </div>
 </section>
 
@@ -252,11 +275,11 @@
 <section class="chapter chapter--future" id="future" aria-label="Что дальше">
   <h2 class="display display--l">А ЧТО ДАЛЬШЕ?</h2>
   <ul class="future" data-future>
-    <li class="future__item">MORE SPEED</li>
-    <li class="future__item">MORE TRAVEL</li>
-    <li class="future__item">MORE WATER</li>
-    <li class="future__item">MORE SNOW</li>
-    <li class="future__item">MORE STORIES</li>
+    <li class="future__item">БОЛЬШЕ СКОРОСТИ</li>
+    <li class="future__item">БОЛЬШЕ ДОРОГ</li>
+    <li class="future__item">БОЛЬШЕ ВОДЫ</li>
+    <li class="future__item">БОЛЬШЕ СНЕГА</li>
+    <li class="future__item">БОЛЬШЕ ИСТОРИЙ</li>
   </ul>
   <p class="future__q">?</p>
   <p class="future__line">этого пока никто не знает</p>
@@ -280,7 +303,7 @@
     <!-- The personal message goes here. Left empty on purpose. -->
     <p class="final__message" data-final-message></p>
     <p class="display display--m final__greet">С ДНЁМ РОЖДЕНИЯ, МИРА ❤️</p>
-    <p class="final__after">Дальше — интереснее.</p>
+    <p class="final__after">Дальше - интереснее.</p>
   </div>
 </section>
 

@@ -91,6 +91,14 @@
 
 * { box-sizing: border-box; }
 
+/* The `hidden` attribute is only a user-agent rule, so ANY author
+   rule that sets display beats it - .btn is display:inline-block,
+   .gift__stats is display:grid, and both stayed on screen after
+   being hidden, leaving dead gaps mid-sequence. The whole gift
+   chapter is staged with this attribute, so it has to actually
+   win. */
+[hidden] { display: none !important; }
+
 html {
   background: var(--bg);
   /* The whole experience is one continuous scroll. */
@@ -655,40 +663,114 @@ img, video { max-width: 100%; display: block; }
   mix-blend-mode: multiply;
 }
 
-.gift__shell { position: relative; width: 72%; height: 72%; overflow: visible; }
-
-.gift__shell-g {
-  transform-origin: 50% 50%;
-  transition: transform 620ms var(--ease);
-}
-
-.gift__panel.is-equipped .gift__shell-g { transform: scale(1.08) rotate(-4deg); }
-
-.shell-plate {
-  fill: #1f8a45;
-  stroke: #052a13;
-  stroke-width: 4;
-}
-
-.shell-hex {
-  fill: #29a352;
-  stroke: #052a13;
-  stroke-width: 4;
-  stroke-linejoin: round;
-}
-
-.shell-hex--in { fill: #35c063; }
-
-.shell-seam { stroke: #052a13; stroke-width: 3; fill: none; opacity: .8; }
-
 /* Acid rim once the item is armed, so the section still belongs
    to this site rather than to a different one. */
 .gift__panel.is-armed { box-shadow: inset 0 0 0 3px var(--acid); }
 
-/* Slot for optional external artwork. Empty unless a file is
-   mapped in js/media.js - and if none is, nothing renders. */
-.gift__slot { position: absolute; inset: 8%; display: grid; place-items: center; pointer-events: none; }
+/* The panel irises shut as the real photograph opens. */
+.gift__panel.is-blown {
+  animation: gift-blow 460ms var(--ease) forwards;
+}
+
+@keyframes gift-blow {
+  0%   { transform: scale(1); opacity: 1; }
+  40%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(.4); opacity: 0; }
+}
+
+/* TMNT clips sit inside the comic frame. */
+.gift__slot { position: absolute; inset: 6%; display: grid; place-items: center; pointer-events: none; z-index: 2; }
 .gift__slot:empty { display: none; }
+.gift__slot .moment { width: 100%; }
+.gift__slot .moment video,
+.gift__slot .moment img { border: 0; filter: none; max-height: 100%; }
+
+/* ---------- the real gift -----------------------------------
+   The photograph is the point of the chapter, so it gets the
+   screen to itself: large, uncrowded, and nothing else revealed
+   until it has been looked at. */
+
+.gift__setup {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  max-width: 22ch;
+  margin: 0;
+}
+
+.gift__reveal {
+  position: relative;
+  margin: 0;
+  width: min(34rem, 86vw);
+  /* Starts clipped to nothing and irises open on reveal. */
+  clip-path: circle(0% at 50% 50%);
+  opacity: 0;
+  transform: scale(.92);
+}
+
+.gift__reveal.is-open {
+  clip-path: circle(75% at 50% 50%);
+  opacity: 1;
+  transform: none;
+  transition:
+    clip-path 900ms var(--ease),
+    opacity 500ms var(--ease),
+    transform 900ms var(--ease);
+}
+
+.gift__tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+  position: relative;
+}
+
+.gift__reveal img {
+  width: 100%;
+  height: auto;
+  /* The cut-out has no background of its own, so a drop shadow is
+     what stops it floating in the black. */
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, .8));
+}
+
+/* A slow light sweep across the shell, once, on reveal. */
+.gift__sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg,
+    transparent 35%, rgba(255, 255, 255, .16) 50%, transparent 65%);
+  background-size: 300% 100%;
+  background-position: 140% 0;
+}
+
+.gift__reveal.is-open .gift__sweep {
+  animation: gift-sweep 1500ms var(--ease) 700ms 1 both;
+}
+
+@keyframes gift-sweep {
+  from { background-position: 140% 0; }
+  to   { background-position: -40% 0; }
+}
+
+/* Acid flash that covers the swap from comic panel to photograph. */
+.gift__flash {
+  position: absolute;
+  inset: -20%;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, var(--acid), transparent 62%);
+  opacity: 0;
+}
+
+.gift__flash.is-firing { animation: gift-flash 620ms var(--ease) both; }
+
+@keyframes gift-flash {
+  0%   { opacity: 0; transform: scale(.2); }
+  18%  { opacity: .9; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+.gift__outro:empty { display: none; }
 
 .gift__class {
   font-family: var(--mono);
@@ -771,11 +853,44 @@ img, video { max-width: 100%; display: block; }
 .moment { margin: 0; line-height: 0; }
 .moment video, .moment img { width: 100%; height: auto; display: block; }
 
+/* Sizes. Reactions are punctuation, so even the large one stays
+   well under the width of a personal photograph - the archive
+   must never be upstaged by a meme. */
+.moment--sm { width: min(150px, 38vw); }
+.moment--md { width: min(230px, 52vw); }
+.moment--lg { width: min(360px, 74vw); }
+
+.moment--sm video, .moment--sm img,
+.moment--md video, .moment--md img,
+.moment--lg video, .moment--lg img {
+  /* Aspect ratio always comes from the file. Never stretched. */
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  /* A hard 1px rule and a slight desaturation pull borrowed
+     internet footage toward the site's own palette instead of
+     letting it sit on the page like a sticker. */
+  border: 1px solid #1e1e1e;
+  filter: saturate(.85) contrast(1.05);
+}
+
+/* Enter: rise and clip open, rather than appearing all at once. */
+.moment { opacity: 0; transform: translateY(14px); }
+
+.moment.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+}
+
+/* Once a clip has used up its passes it holds its last frame. The
+   dimming makes it read as "finished" rather than "broken". */
+.moment video.is-frozen { opacity: .72; }
+
 /* A thin strip of dead signal inside the empty years.
    Deliberately small and dim: 2024 and 2025 carry their weight by
    being empty, and a big bright rectangle of noise sitting next to
-   "мы не общались." steals the moment from the line that matters.
-   Cropped to a band rather than shown whole for the same reason. */
+   "мы не общались." steals the moment from the line that matters. */
 .moment--band {
   width: 100%;
   max-width: 26rem;
@@ -787,19 +902,20 @@ img, video { max-width: 100%; display: block; }
   overflow: hidden;
 }
 
-.moment--band video, .moment--band img { height: 100%; object-fit: cover; }
-
-/* the pulse trace under 60+ ТРАВМ */
-.moment--trace {
+.moment--band video, .moment--band img {
+  height: 100%;
   width: 100%;
-  max-width: 24rem;
-  margin-top: 1rem;
-  opacity: .85;
+  object-fit: cover;
+  border: 0;
 }
 
-/* optional artwork inside the comic panel */
-.moment--hero { width: 100%; max-width: 100%; }
-.moment--hero img, .moment--hero video { object-fit: contain; max-height: 100%; }
+/* the pulse trace under 60+ ТРАВМ */
+.moment--trace { width: 100%; max-width: 24rem; margin-top: 1rem; opacity: .85; }
+.moment--trace video { border: 0; }
+
+/* Reactions inside a year band sit to one side of the type so they
+   can never land on top of a caption. */
+.moment--aside { margin-top: 1.5rem; }
 
 @media (prefers-reduced-motion: reduce) {
   /* Autoplaying loops are exactly what this setting is asking to

@@ -6,7 +6,8 @@
    ============================================================ */
 
 import { $, $$, prefersReducedMotion, announce } from './dom.js';
-import { mountMoment } from './media.js';
+import { mountMoment, swapMoment } from './media.js';
+import { asset } from './media-config.js';
 import { sfx } from './audio.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -34,9 +35,12 @@ export async function initIntro() {
     await runMeter(meter, speed);
   }
 
+  // The loading-spinner cat lands on the overrun, before the error.
+  mountMoment($('[data-intro-reaction]'), 'intro-overload');
+
   await wait(500 * speed);
   errorEl.hidden = false;
-  announce('ERROR: TOO MUCH');
+  announce('Ошибка: слишком много');
 
   await wait(1400 * speed);
   load.hidden = true;
@@ -176,43 +180,141 @@ export function initQuestion() {
 
 export function initGift() {
   const panel = $('[data-gift-panel]');
-  const equip = $('[data-gift-equip]');
+  const slot = $('[data-gift-slot]');
+  const tag = $('[data-gift-tag]');
   const armorClass = $('[data-gift-class]');
+  const equip = $('[data-gift-equip]');
+  const reveal = $('[data-gift-reveal]');
+  const flash = $('[data-gift-flash]');
   const stats = $('[data-gift-stats]');
   const word = $('[data-gift-word]');
-  const slot = $('[data-gift-slot]');
-  if (!equip) return;
+  const outro = $('[data-gift-outro]');
+  if (!equip || !panel) return;
 
-  // The armour class card is revealed on approach, before the
-  // button is touched, so the sequence has a beat of its own.
-  const io = new IntersectionObserver(([entry]) => {
+  const reduced = prefersReducedMotion();
+  const beat = (ms) => wait(reduced ? 30 : ms);
+
+  mountPresent();
+
+  /* Steps 1-5 play on approach, so the chapter introduces itself
+     rather than sitting there fully assembled. */
+  const io = new IntersectionObserver(async ([entry]) => {
     if (!entry.isIntersecting) return;
     io.disconnect();
-    mountMoment(slot, 'tmnt-hero', { className: 'moment--hero' });
-    setTimeout(() => {
-      armorClass.hidden = false;
-      panel?.classList.add('is-armed');
-    }, prefersReducedMotion() ? 0 : 500);
-  }, { threshold: 0.4 });
 
-  io.observe(panel || equip);
+    await beat(700);
+    mountMoment(slot, 'gift-intro');       // TMNT enters
+
+    await beat(1500);
+    tag.hidden = false;                    // ЛЕГЕНДАРНЫЙ ПРЕДМЕТ
+    announce('Легендарный предмет');
+
+    await beat(800);
+    swapMoment(slot, 'gift-hype');         // second TMNT beat
+    panel.classList.add('is-armed');
+
+    await beat(700);
+    armorClass.hidden = false;
+    equip.hidden = false;
+  }, { threshold: 0.35 });
+
+  io.observe(panel);
 
   equip.addEventListener('click', async () => {
     equip.disabled = true;
     sfx.equip();
-    panel?.classList.add('is-equipped');
-    mountMoment(slot, 'tmnt-armor', { className: 'moment--hero' });
 
-    const beat = prefersReducedMotion() ? 40 : 520;
+    // 6. Acid flash, then the panel irises out and the photograph
+    // takes the stage. The flash covers the swap so the two never
+    // appear side by side.
+    flash?.classList.add('is-firing');
+    panel.classList.add('is-blown');
 
-    await wait(beat);
+    await beat(260);
+    reveal.hidden = false;
+    requestAnimationFrame(() => reveal.classList.add('is-open'));
+
+    // Everything that led up to the gift gets out of its way. The
+    // brief asks for the photograph to have room, and it cannot
+    // have room while five other things are still on screen.
+    await beat(900);
+    panel.hidden = true;
+    equip.hidden = true;
+    tag.hidden = true;
+    armorClass.hidden = true;
+    $('[data-gift-setup]').hidden = true;
+
+    // 8. Stats, only after the photograph has had the screen alone.
+    await beat(1400);
     stats.hidden = false;
-    announce('+100 ARMOR, +50 STYLE, +бесконечный CHAOS');
+    announce('Плюс сто к защите, плюс пятьдесят к стилю');
 
-    await wait(beat * 1.6);
+    // 9.
+    await beat(1200);
     word.hidden = false;
-    announce('Подарок');
+    announce('Подарок для тебя');
+
+    // 11. The last TMNT beat lands here - after the gift, and well
+    // before the final message. The quiet ending stays quiet.
+    await beat(1600);
+    mountMoment(outro, 'gift-outro');
   });
+
+  enableTilt();
+
+  /* ---------- the photograph ---------- */
+
+  function mountPresent() {
+    const source = $('[data-present-webp]');
+    const img = $('[data-present-img]');
+    const present = asset('present');
+    if (!source || !img || !present) return;
+
+    source.srcset = present.src;
+    img.src = present.fallback || present.src;
+  }
+
+  /* Slow tilt toward the pointer, so the gift can be looked at
+     rather than only watched. Deliberately shallow and damped: a
+     photograph that swings about reads as a gimmick, and this is
+     the one object on the page that should feel real. */
+  function enableTilt() {
+    const tilt = $('[data-gift-tilt]');
+    if (!tilt || reduced) return;
+
+    const MAX = 7;             // degrees
+    let raf = null;
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+
+    const frame = () => {
+      cx += (tx - cx) * 0.08;
+      cy += (ty - cy) * 0.08;
+      tilt.style.transform = `perspective(900px) rotateX(${cy}deg) rotateY(${cx}deg)`;
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.01 ? requestAnimationFrame(frame) : null;
+    };
+
+    const aim = (clientX, clientY) => {
+      const r = tilt.getBoundingClientRect();
+      tx = ((clientX - (r.left + r.width / 2)) / (r.width / 2)) * MAX;
+      ty = -((clientY - (r.top + r.height / 2)) / (r.height / 2)) * MAX;
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+
+    tilt.addEventListener('mousemove', (e) => aim(e.clientX, e.clientY));
+    tilt.addEventListener('mouseleave', () => {
+      tx = 0; ty = 0;
+      if (!raf) raf = requestAnimationFrame(frame);
+    });
+
+    // Touch: drag to tilt. Not passive:false - the page must still
+    // scroll if the finger is really trying to scroll past it.
+    tilt.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      if (t) aim(t.clientX, t.clientY);
+    }, { passive: true });
+
+    tilt.addEventListener('touchend', () => { tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(frame); });
+  }
 }
 
 /* ============================================================

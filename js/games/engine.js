@@ -10,6 +10,7 @@
    ============================================================ */
 
 import { prefersReducedMotion } from '../dom.js';
+import { swapMoment } from '../media.js';
 
 /* ------------------------------------------------------------
    Canvas sized in CSS pixels, backed at device resolution.
@@ -160,6 +161,10 @@ export function createOverlay(stageEl, { startLabel = 'НАЧАТЬ' } = {}) {
   const title = document.createElement('p');
   title.className = 'game__verdict';
 
+  // Reaction clip for the result. Empty on the start screen.
+  const reaction = document.createElement('div');
+  reaction.className = 'game__reaction';
+
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn btn--acid game__btn';
@@ -170,7 +175,7 @@ export function createOverlay(stageEl, { startLabel = 'НАЧАТЬ' } = {}) {
 
   const wrap = document.createElement('div');
   wrap.className = 'game__overlay';
-  wrap.append(title, button, hint);
+  wrap.append(title, reaction, button, hint);
   stageEl.append(wrap);
 
   /* Pressing start always brings the whole stage into view first.
@@ -200,11 +205,15 @@ export function createOverlay(stageEl, { startLabel = 'НАЧАТЬ' } = {}) {
   return {
     node: wrap,
     button,
-    show({ verdict = '', label = startLabel, tone = '', hint: hintText = '' } = {}) {
+    /* `moment` names a placement slot in js/media-config.js. It is
+       swapped rather than appended, so the losing reaction never
+       stacks under the winning one on a replay. */
+    show({ verdict = '', label = startLabel, tone = '', hint: hintText = '', moment = null } = {}) {
       title.textContent = verdict;
       title.className = `game__verdict${tone ? ` game__verdict--${tone}` : ''}`;
       button.textContent = label;
       hint.textContent = hintText;
+      swapMoment(reaction, moment);
       wrap.hidden = false;
       stageEl.classList.remove('is-playing');
     },
@@ -219,3 +228,55 @@ export const reduced = prefersReducedMotion;
 
 /* Random helper used by all three. */
 export const rand = (min, max) => min + Math.random() * (max - min);
+
+/* ------------------------------------------------------------
+   Load a cut-out for drawing into canvas.
+
+   Takes an entry from js/media-config.js and tries its WebP,
+   falling back to the PNG beside it. Returns an object whose
+   `.ready` flips to true when the bitmap is usable, so a draw
+   loop can start immediately and simply skip the image until it
+   arrives - no waiting, and no crash if it never does.
+   ------------------------------------------------------------ */
+export function loadSprite(entry, nearEl = null) {
+  const sprite = { img: null, ready: false };
+  if (!entry || !entry.src) return sprite;
+
+  const begin = () => {
+    const img = new Image();
+    img.decoding = 'async';
+
+    img.addEventListener('load', () => {
+      sprite.img = img;
+      sprite.ready = true;
+    });
+
+    img.addEventListener('error', function onErr() {
+      img.removeEventListener('error', onErr);
+      if (entry.fallback && img.src !== entry.fallback) {
+        img.src = entry.fallback;    // WebP refused - try the PNG
+      }
+    });
+
+    img.src = entry.src;
+  };
+
+  /* The games sit ~28 000 px down the page, so their artwork has no
+     business being on the critical path. Given a stage element, the
+     fetch waits until the reader is within 800 px of it - far enough
+     ahead that it is always decoded before anyone can press start,
+     but off the initial load entirely. */
+  if (!nearEl || typeof IntersectionObserver === 'undefined') {
+    begin();
+    return sprite;
+  }
+
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    begin();
+  }, { rootMargin: '800px' });
+
+  io.observe(nearEl);
+  return sprite;
+}
