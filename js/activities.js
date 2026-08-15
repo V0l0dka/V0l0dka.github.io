@@ -8,7 +8,7 @@
    eight autoplaying clips at once would stall a phone.
    ============================================================ */
 
-import { $, $$, el, picture, loopVideo } from './dom.js';
+import { $, $$, el, picture, loopVideo, autoplayInView } from './dom.js';
 import { ACTIVITIES } from './assets.js';
 
 export function buildActivities() {
@@ -34,26 +34,10 @@ export function buildActivities() {
 
 /* Start a clip when its panel is on screen, pause it when it is not.
    Without this every video decodes continuously for the whole scroll,
-   which is the single biggest battery cost on a page like this. */
+   which is the single biggest battery cost on a page like this.
+
+   These are the heaviest files on the site - the hookah clip alone is
+   1.1 MB - so they get the longest run-up of anything on the page. */
 function playOnlyWhatIsVisible() {
-  const videos = $$('.activity video');
-  if (!videos.length) return;
-
-  const io = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      const video = entry.target;
-      if (entry.isIntersecting) {
-        // preload="none" means there is nothing buffered until now.
-        if (!video.dataset.started) {
-          video.load();
-          video.dataset.started = '1';
-        }
-        video.play().catch(() => { /* autoplay refused; poster stands in */ });
-      } else {
-        video.pause();
-      }
-    }
-  }, { threshold: 0.25 });
-
-  videos.forEach((v) => io.observe(v));
+  autoplayInView($$('.activity video'), { margin: '1600px 0px 1600px 0px' });
 }

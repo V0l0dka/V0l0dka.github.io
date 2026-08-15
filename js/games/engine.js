@@ -54,10 +54,27 @@ export function createStage(stageEl) {
    moving object teleports through its collision checks.
    ------------------------------------------------------------ */
 export class Loop {
-  constructor(step) {
+  /* `shouldRun` is an optional safety net, checked a few times a
+     second rather than every frame.
+
+     autoPause() below stops the loop the moment its observer says
+     the stage has left the screen, and that is still the fast path.
+     But IntersectionObserver only reports CHANGES, and when an
+     element enters and leaves inside a single delivery the two
+     events cancel out and nothing is reported at all. Scrolling
+     briskly past three games in a row does exactly that, and the
+     result was a 60 fps canvas loop still running - measured - with
+     the game thirty thousand pixels off screen.
+
+     Making the loop confirm for itself turns "should have been
+     stopped" into "cannot stay running", and costs one
+     getBoundingClientRect every half second. */
+  constructor(step, { shouldRun = null } = {}) {
     this.step = step;
+    this.shouldRun = shouldRun;
     this.raf = null;
     this.last = 0;
+    this.frames = 0;
     this.running = false;
   }
 
@@ -65,13 +82,22 @@ export class Loop {
     if (this.running) return;
     this.running = true;
     this.last = performance.now();
+    this.frames = 0;
+
     const tick = (now) => {
       if (!this.running) return;
+
+      if (this.shouldRun && ++this.frames % 30 === 0 && !this.shouldRun()) {
+        this.stop();
+        return;
+      }
+
       const dt = Math.min((now - this.last) / 1000, 1 / 20);
       this.last = now;
       this.step(dt);
       this.raf = requestAnimationFrame(tick);
     };
+
     this.raf = requestAnimationFrame(tick);
   }
 
@@ -80,6 +106,14 @@ export class Loop {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
   }
+}
+
+/* Is this element on screen, or close enough that it is about to be?
+   The margin keeps a game running through small scroll adjustments
+   instead of stopping and starting at the edge. */
+export function nearViewport(el, margin = 200) {
+  const r = el.getBoundingClientRect();
+  return r.bottom > -margin && r.top < window.innerHeight + margin;
 }
 
 /* ------------------------------------------------------------

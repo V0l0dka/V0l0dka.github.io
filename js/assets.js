@@ -184,4 +184,14 @@ export const STATS = [
 export const FINAL_PHOTO = photo('img_8753');
 
 /* Assets the first screen must not wait for the scroll to load. */
-export const PRELOAD = [REVEAL_2026.webp, photo('2015').webp];
+/* Only what the opening screen genuinely needs.
+
+   The 2026 reveal used to be here too. It is the payoff of the whole
+   archive and it must never pop in - but it sits about ten thousand
+   pixels down, and preloading it at page start meant 172 KB fetched
+   at high priority, competing with the intro the reader is actually
+   looking at. It is now warmed from js/preload.js while the reader
+   is still moving through the early archive years, which is early
+   enough to be decoded long before the reveal and late enough to
+   cost the opening nothing. */
+export const PRELOAD = [photo('2015').webp];

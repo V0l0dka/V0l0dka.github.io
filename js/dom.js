@@ -15,7 +15,20 @@ export function el(tag, attrs = {}, ...children) {
     if (k === 'class') node.className = v;
     else if (k === 'text') node.textContent = v;
     else if (k.startsWith('on')) node.addEventListener(k.slice(2).toLowerCase(), v);
-    else node.setAttribute(k, v === true ? '' : v);
+    else {
+      node.setAttribute(k, v === true ? '' : v);
+
+      /* `muted` is the one attribute that does not do what it looks
+         like it does. The content attribute reflects defaultMuted,
+         and the spec only copies it into the muted PROPERTY when the
+         element is created by the HTML parser. On an element built
+         with createElement, setting the attribute afterwards leaves
+         .muted === false - so Chrome's autoplay policy rejects
+         play() with NotAllowedError and the clip silently never
+         starts. Every video on this page is built here, so without
+         this line none of them would ever play. */
+      if (k === 'muted') node.muted = true;
+    }
   }
 
   for (const c of children.flat()) {
@@ -70,11 +83,74 @@ export function picture(src, { alt = '', className = '', eager = false } = {}) {
 /* Muted, inline, looping video - the GIF-like background usage.
    preload="none" keeps it off the wire until it is near the screen;
    js/scroll.js starts and stops it by viewport intersection. */
+/* ------------------------------------------------------------
+   DEFERRED VIDEO
+
+   Every looping clip on the page wants the same two-stage life:
+   fetch it while it is still off screen, play it once it arrives,
+   pause it when it leaves. The timing differs from plain lazy
+   loading because "start downloading" and "start playing" are
+   different moments - doing both at the same time is what made the
+   reactions feel slow.
+
+   prepareVideo() promotes the deferred poster to a real one and
+   begins buffering. It is idempotent on purpose: load() resets the
+   element and discards whatever it already has, so calling it twice
+   would undo the head start it exists to create.
+   ------------------------------------------------------------ */
+export function prepareVideo(video) {
+  if (!video || video.dataset.prepared) return;
+  video.dataset.prepared = '1';
+
+  if (video.dataset.poster) video.poster = video.dataset.poster;
+  video.preload = 'auto';
+  try { video.load(); } catch { /* nothing to recover from */ }
+}
+
+/* Fetch early, play in view, pause out of view. `margin` is how much
+   warning the fetch gets - bigger for heavier files. */
+export function autoplayInView(videos, { margin = '1200px 0px 1200px 0px' } = {}) {
+  const list = [...videos];
+  if (!list.length || typeof IntersectionObserver === 'undefined') return;
+
+  const prepareIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      prepareIO.unobserve(e.target);
+      prepareVideo(e.target);
+    }
+  }, { rootMargin: margin });
+
+  const playIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const v = e.target;
+      if (e.isIntersecting) {
+        prepareVideo(v);                 // no-op if already prepared
+        if (!prefersReducedMotion()) v.play().catch(() => { /* poster stands in */ });
+      } else {
+        v.pause();
+      }
+    }
+  }, { threshold: 0.25 });
+
+  for (const v of list) { prepareIO.observe(v); playIO.observe(v); }
+}
+
 export function loopVideo(src, { className = '' } = {}) {
   return el('video', {
     class: className,
     src: src.mp4,
-    poster: src.poster,
+    /* The poster is deliberately NOT set here. A `poster` attribute
+       is fetched eagerly on first paint no matter what `preload`
+       says, and these clips sit tens of thousands of pixels down the
+       page - four posters were costing a quarter of the entire
+       initial download for panels nobody had scrolled to yet.
+
+       It is carried as data-poster and promoted to a real poster by
+       the prepare pass in js/activities.js, which runs while the
+       panel is still off screen. The width/height attributes below
+       still reserve the box, so deferring it shifts no layout. */
+    'data-poster': src.poster,
     muted: true,
     loop: true,
     playsinline: true,

@@ -7,7 +7,8 @@
    ============================================================ */
 
 import { $, applySize } from './dom.js';
-import { FINAL_PHOTO, PRELOAD } from './assets.js';
+import { asset } from './media-config.js';
+import { FINAL_PHOTO, PRELOAD, REVEAL_2026 } from './assets.js';
 
 import { initIntro, initQuestion, initGift, initFuture, initAudio } from './interactions.js';
 import { initAudioEngine } from './audio.js';
@@ -16,6 +17,7 @@ import { buildActivities } from './activities.js';
 import { buildStats } from './statistics.js';
 import { buildShowcase } from './showcase.js';
 import { initScroll } from './scroll.js';
+import { initPreload } from './preload.js';
 
 import { init as initCoal } from './games/coal-game.js';
 import { init as initSurron } from './games/surron-game.js';
@@ -38,6 +40,10 @@ function build() {
   initAudio();
 
   initScroll();
+
+  // Starts nothing now; only arms the observers that fetch each
+  // chapter's media shortly before the reader gets there.
+  initPreload(asset, { reveal2026: REVEAL_2026.webp });
 
   // The intro runs last so the rest of the page is already built
   // and measured behind it before the lock lifts.

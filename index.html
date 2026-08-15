@@ -157,9 +157,17 @@
   <article class="game" id="game-coal" data-game="coal">
     <h3 class="display display--m">ЛОВИ УГОЛЬ</h3>
     <div class="game__stage" data-game-stage="coal">
-      <div class="game__hud">
-        <span class="hud__label">УГЛИ</span>
-        <span class="hud__value" data-hud="coal">00 / 50</span>
+      <div class="game__hud game__hud--list">
+        <div class="hud__row">
+          <span class="hud__label">УГЛИ</span>
+          <span class="hud__value" data-hud="coal">00 / 30</span>
+        </div>
+        <!-- Only shown in endless mode, where the target is gone and
+             the record is the only thing left to play against. -->
+        <div class="hud__row" data-coal-record hidden>
+          <span class="hud__label">РЕКОРД</span>
+          <span class="hud__value hud__value--sm" data-coal-record-value>0</span>
+        </div>
       </div>
     </div>
   </article>

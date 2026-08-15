@@ -6,7 +6,7 @@
    year changes the composition without touching this file.
    ============================================================ */
 
-import { $, el, picture, loopVideo, applySize, prefersReducedMotion, announce } from './dom.js';
+import { $, $$, el, picture, loopVideo, applySize, prefersReducedMotion, announce, autoplayInView } from './dom.js';
 import { ARCHIVE, REVEAL_2026 } from './assets.js';
 import { mountMoment } from './media.js';
 
@@ -17,6 +17,12 @@ export function buildArchive() {
   for (const entry of ARCHIVE) {
     root.append(entry.empty ? emptyYear(entry) : filledYear(entry));
   }
+
+  /* The 2019 clip used to rely on its poster frame and was never
+     actually played. Now that posters are deferred it needs the same
+     treatment as every other clip on the page: fetched early, played
+     while on screen, paused when it leaves. */
+  autoplayInView($$('.shot__video', root));
 
   mountReveal();
 }

@@ -17,7 +17,7 @@
      - under prefers-reduced-motion nothing animates or autoplays
    ============================================================ */
 
-import { el, prefersReducedMotion } from './dom.js';
+import { el, prefersReducedMotion, prepareVideo } from './dom.js';
 import { resolve } from './media-config.js';
 
 /* ------------------------------------------------------------
@@ -78,9 +78,43 @@ function buildImage(entry) {
 
 /* ------------------------------------------------------------
    Load, play and stop by visibility.
+
+   Two observers, deliberately, because "fetch it" and "play it" are
+   different questions with different answers.
+
+   PREPARE fires while the clip is still roughly a screen and a half
+   away and only downloads and decodes. This is the whole reason the
+   reactions used to feel slow: with preload="none" the browser was
+   told to fetch nothing at all, so the download did not even start
+   until the clip was already a quarter of the way onto the screen
+   and someone was looking at it. The file is small - the largest
+   reaction is 131 KB - so the wait was never bandwidth, it was
+   simply starting far too late.
+
+   PLAY fires when it is actually on screen, exactly as before.
+
+   Preparing early costs nothing on the initial load: at the top of
+   the page every reaction is far outside the prepare margin, so this
+   still downloads nothing up front.
    ------------------------------------------------------------ */
+
+/* Roughly one and a half screens of warning at a typical laptop
+   height. Far enough that a decoded frame is ready before the clip
+   arrives, near enough that most of the page is never fetched. */
+const PREPARE_MARGIN = '1200px 0px 1200px 0px';
+
 function observe(wrap, node, entry) {
   const reduced = prefersReducedMotion();
+
+  if (node.tagName === 'VIDEO') {
+    const prepareIO = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      prepareIO.disconnect();          // downloading twice is pointless
+      prepareVideo(node);
+    }, { rootMargin: PREPARE_MARGIN });
+
+    prepareIO.observe(wrap);
+  }
 
   const io = new IntersectionObserver(([e]) => {
     if (e.isIntersecting) {
@@ -94,9 +128,13 @@ function observe(wrap, node, entry) {
   io.observe(wrap);
 }
 
+
 function play(video, entry) {
   if (!video.dataset.started) {
-    video.load();
+    // Only load here if the prepare pass has not already done it.
+    // Calling load() a second time resets the element and throws
+    // away everything it had buffered, which would undo the point.
+    prepareVideo(video);
     video.dataset.started = '1';
     video.dataset.plays = '0';
 

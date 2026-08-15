@@ -13,7 +13,7 @@
    ============================================================ */
 
 import {
-  createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite,
+  createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite, nearViewport,
 } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
@@ -586,7 +586,8 @@ export function init(stageEl, hud) {
     }
   }
 
-  const loop = new Loop((dt) => { update(dt); draw(); });
+  const loop = new Loop((dt) => { update(dt); draw(); },
+    { shouldRun: () => nearViewport(stageEl) });
 
   /* ---------- input ----------
      Click and tap collect. touchend rather than touchstart, so a

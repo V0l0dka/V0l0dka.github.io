@@ -9,7 +9,7 @@
    the camera shake, the dust and the parallax, not in the maths.
    ============================================================ */
 
-import { createStage, Loop, createOverlay, autoPause, rand, loadSprite } from './engine.js';
+import { createStage, Loop, createOverlay, autoPause, rand, loadSprite, nearViewport } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
 import { asset } from '../media-config.js';
@@ -406,7 +406,8 @@ export function init(stageEl, hud) {
     ctx.restore();
   }
 
-  const loop = new Loop((dt) => { update(dt); draw(); });
+  const loop = new Loop((dt) => { update(dt); draw(); },
+    { shouldRun: () => nearViewport(stageEl) });
 
   /* ---------- input ----------
      SPACE scrolls the page by default. It is only swallowed while
