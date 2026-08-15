@@ -108,6 +108,61 @@ export class Loop {
   }
 }
 
+/* ------------------------------------------------------------
+   SCENE BACKGROUND
+
+   One photograph behind a game, as its own layer underneath the
+   canvas. Deliberately NOT drawn into the canvas: a CSS layer costs
+   nothing per frame, cannot be reached by collision or hit tests,
+   and lets the browser do `cover` cropping properly at every screen
+   size instead of us reimplementing it in canvas maths.
+
+   The darkening and vignette live in CSS beside it, per game, so
+   each scene can be tuned to its own photograph.
+
+   Nothing is fetched until this runs, and it runs on the same
+   proximity rule as the game's sprites - see loadSprite below.
+   ------------------------------------------------------------ */
+export function mountBackground(stageEl, entry, nearEl = stageEl) {
+  if (!entry || !entry.src) return;
+
+  const layer = document.createElement('div');
+  layer.className = 'game__bg';
+  layer.setAttribute('aria-hidden', 'true');
+
+  // image-set lets the browser take the WebP and fall back to the
+  // JPEG on its own, with no feature detection on our side.
+  const css = entry.fallback
+    ? `image-set(url("${entry.src}") type("image/webp"), url("${entry.fallback}") type("image/jpeg"))`
+    : `url("${entry.src}")`;
+
+  /* Set as a custom property, NOT as background-image directly.
+     Each game's darkening and vignette are further background-image
+     layers declared in games.css, and assigning background-image
+     inline replaces that whole stack - which silently threw away
+     every overlay and left the photographs at full brightness. The
+     variable slots the photograph in underneath them instead.
+
+     Until it is set the declaration has no value, so the layer
+     paints nothing rather than a half-dressed background. */
+  const begin = () => { layer.style.setProperty('--scene', css); };
+
+  // The canvas is appended by createStage() and is positioned, so
+  // inserting the layer first keeps it underneath; games.css also
+  // pins the z-order explicitly rather than relying on order alone.
+  stageEl.prepend(layer);
+
+  if (typeof IntersectionObserver === 'undefined') { begin(); return; }
+
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    begin();
+  }, { rootMargin: '900px 0px 900px 0px' });
+
+  io.observe(nearEl);
+}
+
 /* Is this element on screen, or close enough that it is about to be?
    The margin keeps a game running through small scroll adjustments
    instead of stopping and starting at the edge. */

@@ -13,7 +13,7 @@
    ============================================================ */
 
 import {
-  createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite, nearViewport,
+  createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite, nearViewport, mountBackground,
 } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
@@ -36,6 +36,8 @@ const DISTRACTORS = 7;
 
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
+  stageEl.classList.add('game__stage--diving');
+  mountBackground(stageEl, asset('bgDiving'));
   const overlay = createOverlay(stageEl, { startLabel: 'ПОГРУЖЕНИЕ' });
   const pointer = createPointer(stageEl, () => state.playing);
 
@@ -497,9 +499,12 @@ export function init(stageEl, hud) {
 
     /* --- 1. the scene, fully lit, into the buffer --- */
 
+    /* Translucent, so the seabed photograph behind the canvas reads
+       through as water colour instead of being painted over. It was
+       opaque before there was anything behind it to show. */
     const water = bctx.createLinearGradient(0, 0, 0, h);
-    water.addColorStop(0, '#0d3355');
-    water.addColorStop(1, '#03101f');
+    water.addColorStop(0, 'rgba(13, 51, 85, .58)');
+    water.addColorStop(1, 'rgba(3, 16, 31, .74)');
     bctx.fillStyle = water;
     bctx.fillRect(0, 0, w, h);
 
@@ -559,7 +564,12 @@ export function init(stageEl, hud) {
     /* --- 3. deep water, then the masked scene on top --- */
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#030c16';
+    /* Also translucent now. This used to be flat opaque deep water
+       and was the only thing the reader saw outside the torch; the
+       photograph behind the canvas now supplies that, and this sits
+       on top of it as depth. Kept heavy on purpose - the search only
+       works while the seabed is too dark to read without the beam. */
+    ctx.fillStyle = 'rgba(3, 12, 22, .70)';
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(buffer, 0, 0, w, h);
 

@@ -29,6 +29,7 @@
    image icon. Decorative media can never break a section.
    ============================================================ */
 
+const BACKGROUNDS = '/assets/external/backgrounds';
 const REACTIONS = '/assets/external/reactions';
 const TMNT = '/assets/external/tmnt';
 const SURRON = '/assets/external/surron';
@@ -38,6 +39,9 @@ const GIFT = '/assets/external/gift';
 
 const clip = (src, note) => ({ kind: 'video', src, note });
 const cutout = (base, note) => ({ kind: 'image', src: `${base}.webp`, fallback: `${base}.png`, note });
+/* Opaque scene photographs. JPEG rather than PNG behind the WebP,
+   because there is no alpha to preserve. */
+const bg = (base, note) => ({ kind: 'image', src: `${base}.webp`, fallback: `${base}.jpg`, note });
 
 /* ------------------------------------------------------------
    THE LIBRARY
@@ -79,6 +83,15 @@ export const ASSETS = {
      re-run for the new pixels to reach the site. Used both in the
      showcase and as the rider in the Sur-Ron game. */
   surronSilhouette: cutout(`${SURRON}/silhouette`, 'Sur-Ron Light Bee X, вид сбоку'),
+
+  /* --- one scene behind each mini-game ---
+     Opaque photographs, not cut-outs. Each is used by exactly one
+     game and nowhere else on the site. They are mounted as a CSS
+     layer underneath the canvas rather than drawn into it, so they
+     cost nothing per frame and cannot touch collision or hit tests. */
+  bgCoal: bg(`${BACKGROUNDS}/hookah`, 'неоновая вывеска бара, ВНЕ ВРЕМЕНИ'),
+  bgSurron: bg(`${BACKGROUNDS}/surron`, 'ночной въездной знак КОЦЮБИНСЬКЕ в зелёном неоне'),
+  bgDiving: bg(`${BACKGROUNDS}/diving`, 'песчаное дно и поверхность воды сверху'),
 
   /* The campaign poster: multiple views plus printed specifications.
      Opaque, so it is a jpg rather than a cut-out. */

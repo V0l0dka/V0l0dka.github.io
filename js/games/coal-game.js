@@ -17,7 +17,7 @@
    20 KB WebP.
    ============================================================ */
 
-import { createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite, nearViewport } from './engine.js';
+import { createStage, Loop, createPointer, createOverlay, autoPause, rand, loadSprite, nearViewport, mountBackground } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
 import { asset } from '../media-config.js';
@@ -88,6 +88,8 @@ function writeRecord(n) {
 
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
+  stageEl.classList.add('game__stage--coal');
+  mountBackground(stageEl, asset('bgCoal'));
   const overlay = createOverlay(stageEl, { startLabel: 'НАЧАТЬ' });
   const pointer = createPointer(stageEl, () => state.playing);
 

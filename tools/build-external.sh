@@ -172,5 +172,41 @@ fi
 # feed the configurator's РАКУРС switch, which was removed in
 # favour of the showcase. The originals are untouched in SRC.
 
+# --- game backgrounds ------------------------------------------
+# One scene behind each mini-game. These are opaque photographs, so
+# they take the JPEG/WebP path rather than the cut-out path above.
+#
+# Each is kept at or below its NATIVE width. None of them is
+# upscaled here: baking an enlargement into the file would only
+# spend bytes on pixels the source never had. Where a background is
+# smaller than the stage - the diving plate is 700x350 - CSS `cover`
+# does the scaling at display time, and it sits under a heavy dark
+# overlay and the torch mask, which is why the softness does not
+# show.
+#
+# A .jpg is written beside each .webp; the CSS asks for both through
+# image-set() so a browser without WebP still gets a background.
+background() {
+  local in="$1" name="$2" max="$3"
+  [[ -f "$in" ]] || { echo "  MISSING $in"; return; }
+  local vf="scale='min(iw,$max)':-2:flags=lanczos"
+  ffmpeg -y -loglevel error -i "$in" -vf "$vf" -c:v libwebp -qscale:v 80 \
+         -compression_level 6 "$ext/backgrounds/$name.webp"
+  ffmpeg -y -loglevel error -i "$in" -vf "$vf" -q:v 4 \
+         "$ext/backgrounds/$name.jpg"
+  echo "  backgrounds/$name"
+}
+
+echo
+echo "game backgrounds:"
+mkdir -p "$ext/backgrounds"
+# 1672x941, already 16:9 - the one that matches the stage exactly.
+background "$SRC/bike-background.png"      surron 1600
+# 1080x1080 square. Kept at native width; `cover` crops it top and
+# bottom to reach 16:9, which is the intended framing.
+background "$SRC/hookah_background.jpeg"   hookah 1080
+# 700x350. Native width, deliberately not enlarged - see above.
+background "$SRC/diving_background.jpg"    diving 700
+
 echo
 echo "external total: $(du -sh "$ext" | cut -f1)"

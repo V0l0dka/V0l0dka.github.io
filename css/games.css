@@ -208,3 +208,89 @@
   gap: .75rem;
   justify-content: center;
 }
+
+/* ============================================================
+   GAME SCENE BACKGROUNDS
+
+   One photograph behind each game, mounted by mountBackground()
+   in js/games/engine.js as its own layer under the canvas.
+
+   Layer order inside .game__stage:
+     .game__bg      0   photograph + darkening + vignette
+     canvas         1   the game itself
+     .game__hud     2
+     .game__overlay 3
+
+   The darkening is part of the same element's background-image
+   stack rather than a separate node, so there is one layer to
+   composite instead of two. Each game tunes its own numbers below,
+   because the three photographs are nothing like each other: one is
+   a dark bar, one is a green-lit night scene, one is bright sunlit
+   shallows.
+   ============================================================ */
+
+.game__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* Scenery, never a target. The games read pointer events from the
+     stage, and a decorative layer has no business being able to
+     swallow or retarget one of them. */
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Nothing shows until mountBackground() sets background-image, so
+     a slow connection sees the stage's own flat colour rather than
+     a half-painted photograph. */
+  background-color: transparent;
+}
+
+/* The canvas must sit above the photograph. It was previously the
+   only positioned child and needed no z-index. */
+.game__stage canvas { z-index: 1; }
+
+/* ---------- coal: neon bar ----------------------------------
+   Already a dark photograph, but the neon sign in the middle is the
+   brightest thing in it and the coals fall straight past it. The
+   overlay is carried mostly by a vignette plus a flat wash, so the
+   sign stays legible as atmosphere without competing with a small
+   glowing square. */
+.game__stage--coal .game__bg {
+  background-image:
+    radial-gradient(115% 88% at 50% 46%, rgba(5,5,5,.34), rgba(5,5,5,.84) 100%),
+    linear-gradient(rgba(5,5,5,.70), rgba(5,5,5,.70)),
+    var(--scene);
+}
+
+/* ---------- sur-ron: night road sign ------------------------
+   The green here is very close to the site's own acid, so it needs
+   less darkening than the others to stay handsome - but the bike is
+   black and rides along the bottom, so the lower third is pushed
+   down harder than the top to keep the silhouette readable. */
+.game__stage--surron .game__bg {
+  background-image:
+    linear-gradient(180deg, rgba(5,5,5,.40) 0%, rgba(5,5,5,.50) 55%, rgba(5,5,5,.78) 100%),
+    var(--scene);
+}
+
+/* ---------- diving: sunlit shallows -------------------------
+   The heaviest treatment of the three, and the only one where the
+   overlay is doing real work rather than polish. The supplied plate
+   is bright sand under a lit surface - almost the opposite of the
+   scene this game needs - so without deep darkening and a blue cast
+   the torch would have nothing left to reveal and the search would
+   be over before it started. */
+.game__stage--diving .game__bg {
+  background-image:
+    radial-gradient(120% 100% at 50% 55%, rgba(2,10,20,.45), rgba(2,10,20,.88) 100%),
+    linear-gradient(rgba(4,26,48,.55), rgba(4,26,48,.55)),
+    linear-gradient(rgba(0,0,0,.40), rgba(0,0,0,.40)),
+    var(--scene);
+}
+
+/* When the dive is finished the stage lifts into the editorial
+   palette; the photograph goes with it rather than staying behind
+   the new, lighter background. */
+.game--deep .game__bg { transition: opacity 1400ms var(--ease); }
+.game--deep.is-surfaced .game__bg { opacity: .25; }

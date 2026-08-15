@@ -9,7 +9,7 @@
    the camera shake, the dust and the parallax, not in the maths.
    ============================================================ */
 
-import { createStage, Loop, createOverlay, autoPause, rand, loadSprite, nearViewport } from './engine.js';
+import { createStage, Loop, createOverlay, autoPause, rand, loadSprite, nearViewport, mountBackground } from './engine.js';
 import { sfx } from '../audio.js';
 import { announce, prefersReducedMotion } from '../dom.js';
 import { asset } from '../media-config.js';
@@ -22,6 +22,8 @@ const MAX_SPEED = 690;
 
 export function init(stageEl, hud) {
   const stage = createStage(stageEl);
+  stageEl.classList.add('game__stage--surron');
+  mountBackground(stageEl, asset('bgSurron'));
   const overlay = createOverlay(stageEl, { startLabel: 'НАЧАТЬ' });
 
   // The real Light Bee X, cut out. The vector bike below stays as
